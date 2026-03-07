@@ -1,0 +1,20 @@
+{
+  "name": "apk-extraction-service",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js",
+    "docker:build": "docker build --platform linux/amd64 -t apk-extraction-service .",
+    "docker:tag": "docker tag apk-extraction-service gintama2412/market-place:apk-extraction-service",
+    "docker:push": "docker push gintama2412/market-place:apk-extraction-service"
+  },
+  "dependencies": {
+    "adbkit-apkreader": "^3.2.0",
+    "adm-zip": "^0.5.16",
+    "express": "^4.22.1",
+    "express-rate-limit": "^8.2.1",
+    "node-cron": "^3.0.3"
+  }
+}
