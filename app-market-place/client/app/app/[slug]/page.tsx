@@ -29,7 +29,7 @@ export default function AppDetailPage() {
 
   useEffect(() => {
     if (!slug) {
-      setApp(null);
+      queueMicrotask(() => setApp(null));
       return;
     }
     let cancelled = false;
@@ -46,10 +46,12 @@ export default function AppDetailPage() {
   }, [slug]);
 
   useEffect(() => {
-    if (typeof window !== "undefined" && slug)
-      setDownloadGatewayUrl(`${window.location.origin}/api/apps/${slug}/download`);
-    else
-      setDownloadGatewayUrl("");
+    queueMicrotask(() => {
+      if (typeof window !== "undefined" && slug)
+        setDownloadGatewayUrl(`${window.location.origin}/api/apps/${slug}/download`);
+      else
+        setDownloadGatewayUrl("");
+    });
   }, [slug]);
 
   if (!slug) {

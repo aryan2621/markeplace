@@ -46,8 +46,10 @@ export function MarketplaceContent() {
 
   useEffect(() => {
     let cancelled = false;
-    setLoading(true);
-    setError(null);
+    queueMicrotask(() => {
+      setLoading(true);
+      setError(null);
+    });
     Promise.all([getCategories(), getApps(), getFeaturedApps()])
       .then(([categoriesList, appsList, featuredList]) => {
         if (cancelled) return;
@@ -130,8 +132,8 @@ export function MarketplaceContent() {
 
       <Tabs defaultValue={DEFAULT_MARKETPLACE_TAB} className="w-full">
         <TabsList className="w-full sm:w-auto">
-          <TabsTrigger value={MarketplaceTab.Featured}>Featured</TabsTrigger>
           <TabsTrigger value={MarketplaceTab.All}>All</TabsTrigger>
+          <TabsTrigger value={MarketplaceTab.Featured}>Featured</TabsTrigger>
           <TabsTrigger value={MarketplaceTab.Categories}>Categories</TabsTrigger>
         </TabsList>
 

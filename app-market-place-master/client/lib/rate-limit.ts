@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import { redis } from "@/lib/redis";
 
 const RATE_LIMIT_REQUESTS = Math.max(1, parseInt(process.env.RATE_LIMIT_REQUESTS ?? "100", 10) || 100);
-const RATE_LIMIT_WINDOW = process.env.RATE_LIMIT_WINDOW ?? "1 m";
+const RATE_LIMIT_WINDOW = (process.env.RATE_LIMIT_WINDOW ?? "1 m") as `${number} s` | `${number} m` | `${number} h` | `${number} d`;
 
 const ratelimit = new Ratelimit({
   redis,
@@ -23,6 +23,9 @@ export async function checkMasterRateLimit(
       { status: 429, headers: { "Retry-After": String(retryAfterSeconds) } }
     );
   } catch {
-    return null;
+    return NextResponse.json(
+      { error: "Rate limit unavailable. Try again later." },
+      { status: 503 }
+    );
   }
 }

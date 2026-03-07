@@ -173,7 +173,6 @@ export default function ReviewDetailPage() {
         {loading && <Loader />}
         {!loading && data && (
           <div className="space-y-6">
-            {/* Horizontal summary card: app name, risk, developer, description, download */}
             <Card className="rounded-xl border border-border bg-card shadow-sm overflow-hidden">
               <CardContent className="p-4 sm:p-5 min-w-0 overflow-hidden">
                 <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
@@ -223,9 +222,7 @@ export default function ReviewDetailPage() {
               </CardContent>
             </Card>
 
-            {/* Two columns for details */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Left column: review steps */}
             <div className="space-y-6 min-w-0">
             <Card className="overflow-hidden">
               <CardHeader>
@@ -238,7 +235,6 @@ export default function ReviewDetailPage() {
                 </p>
               </CardHeader>
               <CardContent className="space-y-4 min-w-0 overflow-hidden">
-                {/* Step 1: Download URL */}
                 <ReviewStep
                   icon={data.app.downloadUrl ? CheckCircle2 : XCircle}
                   status={data.app.downloadUrl ? "pass" : "fail"}
@@ -259,7 +255,6 @@ export default function ReviewDetailPage() {
                   }
                 />
 
-                {/* Step 2: Privacy policy */}
                 <ReviewStep
                   icon={data.app.privacyPolicyUrl ? CheckCircle2 : AlertCircle}
                   status={data.app.privacyPolicyUrl ? "pass" : "warn"}
@@ -280,7 +275,6 @@ export default function ReviewDetailPage() {
                   }
                 />
 
-                {/* Step 3: Package name */}
                 <ReviewStep
                   icon={Package}
                   status="info"
@@ -294,7 +288,6 @@ export default function ReviewDetailPage() {
                   }
                 />
 
-                {/* Step 4: Permissions */}
                 <ReviewStep
                   icon={Shield}
                   status="info"
@@ -320,7 +313,6 @@ export default function ReviewDetailPage() {
                   }
                 />
 
-                {/* Step 5: Risk assessment */}
                 {data.latestRisk && (
                   <ReviewStep
                     icon={data.latestRisk.riskScore > 80 ? AlertTriangle : CheckCircle2}
@@ -355,7 +347,6 @@ export default function ReviewDetailPage() {
                   />
                 )}
 
-                {/* Step 6: Policy / keywords */}
                 <ReviewStep
                   icon={
                     data.app.verificationResult?.toLowerCase().includes("keyword") ||
@@ -384,7 +375,6 @@ export default function ReviewDetailPage() {
                   }
                 />
 
-                {/* Step 7: Verification outcome */}
                 <ReviewStep
                   icon={Calendar}
                   status="info"
@@ -419,7 +409,6 @@ export default function ReviewDetailPage() {
                   }
                 />
 
-                {/* Step 8: Data safety (if present) */}
                 {data.dataSafety && Object.keys(data.dataSafety).length > 0 && (
                   <ReviewStep
                     icon={FileText}
@@ -436,7 +425,6 @@ export default function ReviewDetailPage() {
             </Card>
             </div>
 
-            {/* Right column: permissions, risk raw, actions */}
             <div className="space-y-6 lg:sticky lg:top-4 lg:self-start min-w-0">
               {data.permissions.length > 0 && (
                 <Card className="overflow-hidden">

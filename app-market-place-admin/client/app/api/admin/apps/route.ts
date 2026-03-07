@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getDb } from "@/lib/firebase-admin";
 import { checkAdminRateLimit } from "@/lib/rate-limit";
 import { COLLECTIONS } from "@/lib/firestore-collections";
+import { validateSlug } from "@/lib/validation";
 
 function docToApp(doc: DocumentSnapshot) {
   const d = doc.data()!;
@@ -62,7 +63,7 @@ export async function GET(req: NextRequest) {
     const search = searchParams.get("search") ?? undefined;
     const categoryId = searchParams.get("categoryId") ?? undefined;
 
-    const snap = await db.collection(COLLECTIONS.apps).get();
+    const snap = await db.collection(COLLECTIONS.apps).where("developerId", "==", userId).get();
     let rows = snap.docs.map(docToApp);
     if (categoryId?.trim()) {
       rows = rows.filter((r) => r.categoryId === categoryId);
@@ -92,10 +93,12 @@ export async function POST(req: NextRequest) {
   if (rateLimitRes) return rateLimitRes;
   try {
     const body = await req.json();
-    const slug = body.slug as string;
-    if (!slug?.trim()) {
-      return NextResponse.json({ error: "slug required" }, { status: 400 });
+    const slugRaw = typeof body.slug === "string" ? body.slug.trim() : "";
+    const slugValidation = validateSlug(slugRaw);
+    if (!slugValidation.ok) {
+      return NextResponse.json({ error: slugValidation.error }, { status: 400 });
     }
+    const slug = slugRaw;
     const db = getDb();
     const existing = await db.collection(COLLECTIONS.apps).doc(slug).get();
     if (existing.exists) {

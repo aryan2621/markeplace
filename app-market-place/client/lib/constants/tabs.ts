@@ -4,4 +4,4 @@ export enum MarketplaceTab {
   Categories = "categories",
 }
 
-export const DEFAULT_MARKETPLACE_TAB = MarketplaceTab.Featured;
+export const DEFAULT_MARKETPLACE_TAB = MarketplaceTab.All;

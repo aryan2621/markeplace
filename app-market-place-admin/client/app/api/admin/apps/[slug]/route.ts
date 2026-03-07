@@ -4,6 +4,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { getDb } from "@/lib/firebase-admin";
 import { checkAdminRateLimit } from "@/lib/rate-limit";
 import { COLLECTIONS } from "@/lib/firestore-collections";
+import { getAppIfOwned } from "@/lib/admin-apps";
+import { validateSlug } from "@/lib/validation";
 
 function docToApp(doc: DocumentSnapshot) {
   const d = doc.data()!;
@@ -61,10 +63,18 @@ export async function GET(
   if (rateLimitRes) return rateLimitRes;
   try {
     const { slug } = await params;
+    const slugValidation = validateSlug(slug);
+    if (!slugValidation.ok) {
+      return NextResponse.json({ error: slugValidation.error }, { status: 400 });
+    }
     const db = getDb();
-    const appSnap = await db.collection(COLLECTIONS.apps).doc(slug).get();
-    if (!appSnap.exists) {
-      return NextResponse.json({ error: "App not found" }, { status: 404 });
+    const appSnap = await getAppIfOwned(db, slug, userId);
+    if (!appSnap) {
+      const exists = (await db.collection(COLLECTIONS.apps).doc(slug).get()).exists;
+      return NextResponse.json(
+        { error: exists ? "Forbidden" : "App not found" },
+        { status: exists ? 403 : 404 }
+      );
     }
     return NextResponse.json(docToApp(appSnap));
   } catch (e) {
@@ -85,13 +95,21 @@ export async function PATCH(
   if (rateLimitRes) return rateLimitRes;
   try {
     const { slug } = await params;
+    const slugValidation = validateSlug(slug);
+    if (!slugValidation.ok) {
+      return NextResponse.json({ error: slugValidation.error }, { status: 400 });
+    }
     const body = await req.json();
     const db = getDb();
-    const ref = db.collection(COLLECTIONS.apps).doc(slug);
-    const appSnap = await ref.get();
-    if (!appSnap.exists) {
-      return NextResponse.json({ error: "App not found" }, { status: 404 });
+    const appSnap = await getAppIfOwned(db, slug, userId);
+    if (!appSnap) {
+      const exists = (await db.collection(COLLECTIONS.apps).doc(slug).get()).exists;
+      return NextResponse.json(
+        { error: exists ? "Forbidden" : "App not found" },
+        { status: exists ? 403 : 404 }
+      );
     }
+    const ref = db.collection(COLLECTIONS.apps).doc(slug);
     const patch: Record<string, unknown> = {};
     if (body.name !== undefined) patch.name = body.name;
     if (body.developer !== undefined) patch.developer = body.developer;

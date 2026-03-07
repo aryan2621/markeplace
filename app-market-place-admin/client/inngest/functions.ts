@@ -25,7 +25,7 @@ export const checkReportThresholds = inngest.createFunction(
     name: "Suspend apps that exceed report threshold",
     retries: 1,
   },
-  { cron: "0 * * * *" },
+  { cron: "0 0,12 * * *" },
   async ({ step }) => {
     const db = getDb();
     const reportsSnap = await db.collection(COLLECTIONS.appReports).get();

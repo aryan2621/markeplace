@@ -4,6 +4,7 @@ import { getDb } from "@/lib/firebase-admin";
 import { checkAdminRateLimit } from "@/lib/rate-limit";
 import { COLLECTIONS } from "@/lib/firestore-collections";
 import { inngest } from "@/inngest/client";
+import { validateSlug } from "@/lib/validation";
 
 export async function POST(
   _req: NextRequest,
@@ -27,12 +28,19 @@ export async function POST(
     }
 
     const { slug } = await params;
+    const slugValidation = validateSlug(slug);
+    if (!slugValidation.ok) {
+      return NextResponse.json({ error: slugValidation.error }, { status: 400 });
+    }
     const ref = db.collection(COLLECTIONS.apps).doc(slug);
     const appSnap = await ref.get();
     if (!appSnap.exists) {
       return NextResponse.json({ error: "App not found" }, { status: 404 });
     }
     const data = appSnap.data()!;
+    if (data.developerId !== userId) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
     const status = data.status as string | undefined;
     if (status !== "draft" && status !== "rejected") {
       return NextResponse.json(

@@ -2,6 +2,7 @@ import { auth } from "@clerk/nextjs/server";
 import { NextRequest, NextResponse } from "next/server";
 import { getPresignedReadUrl, objectExists } from "@/lib/filebase";
 import { checkAdminRateLimit } from "@/lib/rate-limit";
+import { validateUploadKey } from "@/lib/validation";
 
 export async function GET(req: NextRequest) {
   const { userId } = await auth();
@@ -11,15 +12,17 @@ export async function GET(req: NextRequest) {
   const rateLimitRes = await checkAdminRateLimit(userId);
   if (rateLimitRes) return rateLimitRes;
   const path = req.nextUrl.searchParams.get("storageId") ?? req.nextUrl.searchParams.get("key");
-  if (!path) {
-    return NextResponse.json({ error: "storageId or key required" }, { status: 400 });
+  const keyValidation = validateUploadKey(path ?? "");
+  if (!keyValidation.ok) {
+    return NextResponse.json({ error: keyValidation.error }, { status: 400 });
   }
+  const safePath = (path ?? "").trim();
   try {
-    const exists = await objectExists(path);
+    const exists = await objectExists(safePath);
     if (!exists) {
       return NextResponse.json({ error: "File not found" }, { status: 404 });
     }
-    const url = await getPresignedReadUrl(path);
+    const url = await getPresignedReadUrl(safePath);
     return NextResponse.json({ url });
   } catch (e) {
     const message = e instanceof Error ? e.message : "Failed to get URL";
