@@ -28,6 +28,7 @@ export default function EditAppPage() {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [developerVerified, setDeveloperVerified] = useState<boolean | null>(null);
+  const [hasChanges, setHasChanges] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -102,6 +103,16 @@ export default function EditAppPage() {
   }
 
   async function handleSubmitForReview() {
+    if (!app) return;
+    if (developerVerified !== true) {
+      toast.error("Verify your developer account with GitHub before submitting for review.");
+      return;
+    }
+    const status = app.status ?? "draft";
+    if (status !== "draft" && status !== "rejected") {
+      toast.error("Only draft or rejected apps can be submitted for review.");
+      return;
+    }
     setSubmitting(true);
     try {
       await submitForReview(slug);
@@ -144,7 +155,7 @@ export default function EditAppPage() {
         ) : (
           <div className="space-y-6">
             <div className="flex flex-wrap items-center gap-2">
-              {(app.status === "draft" || app.status === "rejected") && (
+              {(app.status === "draft" || app.status === "rejected") && !hasChanges && (
                 <>
                   <Button
                     type="button"
@@ -248,6 +259,7 @@ export default function EditAppPage() {
               categories={categories}
               onSubmit={handleSubmit}
               slugReadOnly={true}
+              onHasChanges={setHasChanges}
             />
           </div>
         )}

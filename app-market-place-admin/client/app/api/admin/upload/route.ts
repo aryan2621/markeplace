@@ -1,11 +1,7 @@
 import { auth } from "@clerk/nextjs/server";
 import { randomUUID } from "crypto";
 import { NextRequest, NextResponse } from "next/server";
-import {
-  getPresignedUploadUrl,
-  getPresignedReadUrl,
-  UPLOAD_CONTENT_TYPE_APK,
-} from "@/lib/filebase";
+import { getPresignedUploadUrl, getPresignedReadUrl } from "@/lib/filebase";
 import { checkAdminRateLimit } from "@/lib/rate-limit";
 
 const UPLOAD_URL_EXPIRY_SECONDS = 900;
@@ -26,13 +22,12 @@ export async function POST(req: NextRequest) {
         const body = await req.json();
         const name = typeof body?.filename === "string" ? body.filename : "";
         if (name.includes(".")) ext = name.slice(name.lastIndexOf("."));
-      } catch {}
+      } catch { }
     }
     const path = `uploads/${randomUUID()}${ext}`;
 
-    const contentType = UPLOAD_CONTENT_TYPE_APK;
     const [uploadUrl, readUrl] = await Promise.all([
-      getPresignedUploadUrl(path, UPLOAD_URL_EXPIRY_SECONDS, contentType),
+      getPresignedUploadUrl(path, UPLOAD_URL_EXPIRY_SECONDS, "application/octet-stream"),
       getPresignedReadUrl(path, READ_URL_EXPIRY_SECONDS),
     ]);
 
@@ -40,7 +35,6 @@ export async function POST(req: NextRequest) {
       uploadUrl,
       key: path,
       readUrl,
-      contentType,
     });
   } catch (e) {
     const message = e instanceof Error ? e.message : "Failed to create upload URL";

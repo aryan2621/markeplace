@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState, useEffect } from "react";
+import { useUser } from "@clerk/nextjs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -82,15 +83,15 @@ function toFormValues(input: Partial<CreateAppInput> | null): AppFormValues {
     privacyPolicyUrl: (raw?.privacyPolicyUrl as string) ?? "",
     featureGraphic: (raw?.featureGraphic as string) ?? "",
     apkFile: (raw?.apkFile as string) ?? "",
-    collectsPersonalData: (raw?.collectsPersonalData as string) ?? "false",
+    collectsPersonalData: String(raw?.collectsPersonalData) === "true" ? "true" : "false",
     dataTypesCollected: Array.isArray(raw?.dataTypesCollected) ? (raw?.dataTypesCollected as string[]).join(", ") : (raw?.dataTypesCollected as string) ?? "",
-    dataShared: (raw?.dataShared as string) ?? "false",
-    encryptionUsed: (raw?.encryptionUsed as string) ?? "false",
+    dataShared: String(raw?.dataShared) === "true" ? "true" : "false",
+    encryptionUsed: String(raw?.encryptionUsed) === "true" ? "true" : "false",
     contentRating: (raw?.contentRating as string) ?? "",
-    containsAds: (raw?.containsAds as string) ?? "false",
-    containsIap: (raw?.containsIap as string) ?? "false",
-    containsSubscription: (raw?.containsSubscription as string) ?? "false",
-    externalPaymentLinks: (raw?.externalPaymentLinks as string) ?? "false",
+    containsAds: String(raw?.containsAds) === "true" ? "true" : "false",
+    containsIap: String(raw?.containsIap) === "true" ? "true" : "false",
+    containsSubscription: String(raw?.containsSubscription) === "true" ? "true" : "false",
+    externalPaymentLinks: String(raw?.externalPaymentLinks) === "true" ? "true" : "false",
   };
 }
 
@@ -171,8 +172,8 @@ function loadDraft(): AppFormValues | null {
   try {
     const raw = window.localStorage.getItem(DRAFT_STORAGE_KEY);
     if (!raw) return null;
-    const parsed = JSON.parse(raw) as Partial<AppFormValues>;
-    return toFormValues(parsed as Partial<CreateAppInput>);
+    const parsed = JSON.parse(raw);
+    return toFormValues(parsed);
   } catch {
     return null;
   }
@@ -197,6 +198,7 @@ type AppFormProps = {
   onSubmit: (values: CreateAppInput | UpdateAppInput) => Promise<void>;
   slugReadOnly?: boolean;
   onBeforeSubmit?: (values: CreateAppInput | UpdateAppInput) => Promise<boolean>;
+  onHasChanges?: (hasChanges: boolean) => void;
 };
 
 export function AppForm({
@@ -206,7 +208,9 @@ export function AppForm({
   onSubmit,
   slugReadOnly = false,
   onBeforeSubmit,
+  onHasChanges,
 }: AppFormProps) {
+  const { user } = useUser();
   const [values, setValues] = useState<AppFormValues>(() =>
     toFormValues(initialValues)
   );
@@ -215,14 +219,36 @@ export function AppForm({
   const [submitAttempted, setSubmitAttempted] = useState(false);
   const [draftSaved, setDraftSaved] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [screenshotsRaw, setScreenshotsRaw] = useState(() => values.screenshots.join("\n"));
   const downloadInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (mode === "create" && !initialValues) {
       const draft = loadDraft();
-      if (draft) setValues(draft);
+      if (draft) {
+        setValues(draft);
+        setScreenshotsRaw(draft.screenshots.join("\n"));
+      }
     }
   }, [mode, initialValues]);
+
+  useEffect(() => {
+    if (user && mode === "create") {
+      setValues(prev => ({
+        ...prev,
+        developer: prev.developer || `${user.firstName || ""} ${user.lastName || ""}`.trim() || user.fullName || "",
+        developerEmail: prev.developerEmail || user.primaryEmailAddress?.emailAddress || user.emailAddresses?.[0]?.emailAddress || ""
+      }));
+    }
+  }, [user, mode]);
+
+  useEffect(() => {
+    if (onHasChanges) {
+      const initialFormValues = toFormValues(initialValues);
+      const isDirty = JSON.stringify(values) !== JSON.stringify(initialFormValues);
+      onHasChanges(isDirty);
+    }
+  }, [values, initialValues, onHasChanges]);
 
   function handleSaveDraft() {
     saveDraftToStorage(values);
@@ -253,14 +279,13 @@ export function AppForm({
   }
 
   function handleScreenshotsChange(raw: string) {
+    setScreenshotsRaw(raw);
     const list = raw
       .split(/[\n,]+/)
       .map((s) => s.trim())
       .filter(Boolean);
     update("screenshots", list);
   }
-
-  const screenshotsRaw = values.screenshots.join("\n");
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -270,6 +295,7 @@ export function AppForm({
       return;
     }
     setError(null);
+    
     const payload =
       mode === "create" ? formValuesToCreate(values) : formValuesToUpdate(values);
     if (onBeforeSubmit && !(await onBeforeSubmit(payload))) return;
@@ -299,6 +325,18 @@ export function AppForm({
   const iconUrlValid =
     values.icon.trim().startsWith("http://") || values.icon.trim().startsWith("https://");
 
+  const mandatoryFilled =
+    mode !== "create" ||
+    (Boolean(values.name.trim()) &&
+      Boolean(values.slug.trim()) &&
+      Boolean(values.shortDescription.trim()) &&
+      Boolean(values.description.trim()) &&
+      Boolean(values.icon.trim()) &&
+      Boolean(values.downloadUrl.trim()) &&
+      Boolean(values.categoryId) &&
+      Boolean(values.developer.trim()) &&
+      Boolean(values.developerEmail.trim()));
+
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between gap-4">
@@ -320,7 +358,7 @@ export function AppForm({
             type="submit"
             form="app-form"
             size="lg"
-            disabled={submitting}
+            disabled={submitting || (mode === "create" && !mandatoryFilled)}
           >
             {submitting ? "Saving…" : mode === "create" ? "Create app" : "Update app"}
           </Button>
@@ -394,6 +432,7 @@ export function AppForm({
                     id="developer"
                     value={values.developer}
                     onChange={(e) => update("developer", e.target.value)}
+                    disabled={!!user}
                     required
                     aria-invalid={invalid("developer")}
                   />
@@ -405,6 +444,7 @@ export function AppForm({
                     type="email"
                     value={values.developerEmail}
                     onChange={(e) => update("developerEmail", e.target.value)}
+                    disabled={!!user}
                     required={mode === "create"}
                     placeholder="dev@example.com"
                     aria-invalid={invalid("developerEmail")}

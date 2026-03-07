@@ -22,7 +22,7 @@ function getFilebaseClient(): S3Client {
     region: FILEBASE_REGION,
     endpoint: FILEBASE_ENDPOINT,
     credentials: { accessKeyId: accessKey, secretAccessKey: secretKey },
-    forcePathStyle: false,
+    forcePathStyle: true,
     requestChecksumCalculation: "WHEN_REQUIRED",
     responseChecksumValidation: "WHEN_REQUIRED",
   });
@@ -34,12 +34,10 @@ function getBucket(): string {
   return bucket;
 }
 
-export const UPLOAD_CONTENT_TYPE_APK = "application/vnd.android.package-archive";
-
 export async function getPresignedUploadUrl(
   key: string,
   expiresInSeconds = 900,
-  contentType: string = UPLOAD_CONTENT_TYPE_APK
+  contentType: string = "application/octet-stream"
 ): Promise<string> {
   const client = getFilebaseClient();
   const bucket = getBucket();

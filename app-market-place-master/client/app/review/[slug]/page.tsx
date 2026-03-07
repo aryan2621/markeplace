@@ -190,6 +190,16 @@ export default function ReviewDetailPage() {
                     <p className="text-sm text-muted-foreground">
                       {data.app.packageName ?? data.app.slug} · {data.app.developer}
                     </p>
+                    {data.app.developerEmail && (
+                      <p className="text-sm text-muted-foreground">
+                        <a
+                          href={`mailto:${data.app.developerEmail}`}
+                          className="text-primary hover:underline"
+                        >
+                          {data.app.developerEmail}
+                        </a>
+                      </p>
+                    )}
                     {data.app.shortDescription && (
                       <p className="text-sm text-foreground pt-0.5 break-words">
                         {data.app.shortDescription}
