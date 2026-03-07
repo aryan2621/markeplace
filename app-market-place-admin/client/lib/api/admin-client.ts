@@ -85,16 +85,17 @@ export async function uploadFile(file: File): Promise<{ url: string; key: string
     const data = await res.json().catch(() => ({}));
     throw new Error((data?.error as string) ?? "Failed to get upload URL");
   }
-  const { uploadUrl, key, readUrl } = (await res.json()) as {
+  const { uploadUrl, key, readUrl, contentType } = (await res.json()) as {
     uploadUrl: string;
     key: string;
     readUrl: string;
+    contentType?: string;
   };
   const putRes = await fetch(uploadUrl, {
     method: "PUT",
     body: file,
     headers: {
-      "Content-Type": file.type || "application/octet-stream",
+      "Content-Type": contentType ?? file.type ?? "application/octet-stream",
     },
   });
   if (!putRes.ok) {

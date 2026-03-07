@@ -1,7 +1,11 @@
 import { auth } from "@clerk/nextjs/server";
 import { randomUUID } from "crypto";
 import { NextRequest, NextResponse } from "next/server";
-import { getPresignedUploadUrl, getPresignedReadUrl } from "@/lib/filebase";
+import {
+  getPresignedUploadUrl,
+  getPresignedReadUrl,
+  UPLOAD_CONTENT_TYPE_APK,
+} from "@/lib/filebase";
 import { checkAdminRateLimit } from "@/lib/rate-limit";
 
 const UPLOAD_URL_EXPIRY_SECONDS = 900;
@@ -16,8 +20,8 @@ export async function POST(req: NextRequest) {
   if (rateLimitRes) return rateLimitRes;
   try {
     let ext = "";
-    const contentType = req.headers.get("content-type") ?? "";
-    if (contentType.includes("application/json")) {
+    const requestContentType = req.headers.get("content-type") ?? "";
+    if (requestContentType.includes("application/json")) {
       try {
         const body = await req.json();
         const name = typeof body?.filename === "string" ? body.filename : "";
@@ -26,8 +30,9 @@ export async function POST(req: NextRequest) {
     }
     const path = `uploads/${randomUUID()}${ext}`;
 
+    const contentType = UPLOAD_CONTENT_TYPE_APK;
     const [uploadUrl, readUrl] = await Promise.all([
-      getPresignedUploadUrl(path, UPLOAD_URL_EXPIRY_SECONDS),
+      getPresignedUploadUrl(path, UPLOAD_URL_EXPIRY_SECONDS, contentType),
       getPresignedReadUrl(path, READ_URL_EXPIRY_SECONDS),
     ]);
 
@@ -35,6 +40,7 @@ export async function POST(req: NextRequest) {
       uploadUrl,
       key: path,
       readUrl,
+      contentType,
     });
   } catch (e) {
     const message = e instanceof Error ? e.message : "Failed to create upload URL";

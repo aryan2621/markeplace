@@ -23,6 +23,8 @@ function getFilebaseClient(): S3Client {
     endpoint: FILEBASE_ENDPOINT,
     credentials: { accessKeyId: accessKey, secretAccessKey: secretKey },
     forcePathStyle: false,
+    requestChecksumCalculation: "WHEN_REQUIRED",
+    responseChecksumValidation: "WHEN_REQUIRED",
   });
 }
 
@@ -32,13 +34,20 @@ function getBucket(): string {
   return bucket;
 }
 
+export const UPLOAD_CONTENT_TYPE_APK = "application/vnd.android.package-archive";
+
 export async function getPresignedUploadUrl(
   key: string,
-  expiresInSeconds = 900
+  expiresInSeconds = 900,
+  contentType: string = UPLOAD_CONTENT_TYPE_APK
 ): Promise<string> {
   const client = getFilebaseClient();
   const bucket = getBucket();
-  const command = new PutObjectCommand({ Bucket: bucket, Key: key });
+  const command = new PutObjectCommand({
+    Bucket: bucket,
+    Key: key,
+    ContentType: contentType,
+  });
   return getSignedUrl(client, command, { expiresIn: expiresInSeconds });
 }
 
