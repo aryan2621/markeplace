@@ -79,23 +79,32 @@ export async function sendAppApprovedEmail(params: {
   to: string;
   appName: string;
   slug: string;
+  appUrl: string | null;
 }): Promise<{ error?: Error }> {
+  const { to, appName, slug, appUrl } = params;
+  const linkHtml = appUrl
+    ? `<p><a href="${escapeHtml(appUrl)}">View your app in the marketplace</a></p>`
+    : "<p>Your app is now live in the marketplace.</p>";
+    
   return sendEmailApi(
-    params.to,
-    `App approved: ${params.appName}`,
-    `<p>Congratulations! Your app "<strong>${escapeHtml(params.appName)}</strong>" has been approved and is now live on the marketplace.</p>`
+    to,
+    `App approved: ${appName}`,
+    `<p>Your app "<strong>${escapeHtml(appName)}</strong>" (${escapeHtml(slug)}) has been approved and published.</p>${linkHtml}`
   );
 }
 
 export async function sendAppRejectedEmail(params: {
   to: string;
   appName: string;
+  slug: string;
   reason: string;
 }): Promise<{ error?: Error }> {
+  const { to, appName, slug, reason } = params;
+  
   return sendEmailApi(
-    params.to,
-    `App rejected: ${params.appName}`,
-    `<p>Your app "<strong>${escapeHtml(params.appName)}</strong>" has been rejected.</p><p><strong>Reason:</strong> ${escapeHtml(params.reason)}</p><p>Please fix these issues and resubmit.</p>`
+    to,
+    `App not approved: ${appName}`,
+    `<p>Your app "<strong>${escapeHtml(appName)}</strong>" (${escapeHtml(slug)}) was not approved.</p><p><strong>Reason:</strong> ${escapeHtml(reason)}</p><p>You can address the feedback and submit again from your developer dashboard.</p>`
   );
 }
 
