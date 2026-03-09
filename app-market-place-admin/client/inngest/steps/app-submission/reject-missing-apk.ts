@@ -2,7 +2,7 @@ import type { Firestore } from "firebase-admin/firestore";
 import type { DocumentReference } from "firebase-admin/firestore";
 import { COLLECTIONS } from "@/lib/firestore-collections";
 import { writeAuditLog } from "@/lib/audit-log";
-import { sendAppSubmissionFailureEmail } from "@/lib/resend";
+import { sendAppSubmissionFailureEmail } from "@/lib/email";
 import type { StepLogger } from "./types";
 
 export async function rejectMissingApkStep(

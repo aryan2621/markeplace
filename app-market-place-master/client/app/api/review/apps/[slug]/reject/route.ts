@@ -1,11 +1,11 @@
 import { auth } from "@clerk/nextjs/server";
-import { NextRequest, NextResponse } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 import { getDb } from "@/lib/firebase-admin";
+import { writeAuditLog } from "@/lib/audit-log";
+import { sendAppRejectedEmail } from "@/lib/email";
 import { checkMasterRateLimit } from "@/lib/rate-limit";
 import { requireMasterUser } from "@/lib/master-allowlist";
 import { COLLECTIONS } from "@/lib/firestore-collections";
-import { writeAuditLog } from "@/lib/audit-log";
-import { sendAppRejectedEmail } from "@/lib/resend";
 
 export async function POST(
   req: NextRequest,

@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Menu } from "lucide-react";
+import { Menu, Mail } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { UserButton } from "@clerk/nextjs";
 import { Button } from "@/components/ui/button";
@@ -95,6 +95,12 @@ export function MasterLayout({ children }: { children: React.ReactNode }) {
         </div>
 
         <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" className="hidden lg:flex gap-1.5" asChild>
+            <Link href="/api/auth/google">
+              <Mail className="size-4" />
+              Connect Gmail API
+            </Link>
+          </Button>
           <ThemeToggle />
           <UserButton afterSignOutUrl="/" />
         </div>
@@ -121,6 +127,14 @@ export function MasterLayout({ children }: { children: React.ReactNode }) {
                   {label}
                 </NavLink>
               ))}
+              <div className="my-2 border-t border-border" />
+              <Link 
+                href="/api/auth/google" 
+                className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+              >
+                <Mail className="size-4" />
+                Connect Gmail API
+              </Link>
             </nav>
           </div>
         </div>

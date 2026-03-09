@@ -9,6 +9,7 @@ import { UserButton } from "@clerk/nextjs";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { getDeveloper } from "@/lib/api/admin-client";
+import { AuthSettingsDialog } from "./auth-settings-dialog";
 
 const navMain = [
   { href: "/apps", label: "My Apps" },
@@ -105,13 +106,11 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
         </div>
 
         <div className="flex items-center gap-2">
-          {developerVerified === false && (
-            <Button variant="outline" size="sm" asChild className="hidden gap-1.5 lg:flex">
-              <Link href="/auth/verify-github">
-                <Github className="size-4" />
-                Verify with GitHub
-              </Link>
-            </Button>
+          {developerVerified !== null && (
+            <AuthSettingsDialog 
+              developerVerified={developerVerified} 
+              className="hidden lg:flex" 
+            />
           )}
           <nav
             aria-label="Legal"
@@ -150,14 +149,12 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
                   {label}
                 </NavLink>
               ))}
-              {developerVerified === false && (
-                <Link
-                  href="/auth/verify-github"
-                  className="flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground"
-                >
-                  <Github className="size-4" />
-                  Verify with GitHub
-                </Link>
+              {developerVerified !== null && (
+                <AuthSettingsDialog 
+                  developerVerified={developerVerified} 
+                  isMobile={true} 
+                  className="text-muted-foreground"
+                />
               )}
               <div className="my-2 border-t border-border" />
               {navLegal.map(({ href, label }) => (

@@ -13,4 +13,5 @@ export const COLLECTIONS = {
   users: "users",
   developerStrikes: "developerStrikes",
   appAppeals: "appAppeals",
+  settings: "settings",
 } as const;

@@ -1,4 +1,4 @@
-import { sendAppSubmissionSuccessEmail } from "@/lib/resend";
+import { sendAppSubmissionSuccessEmail } from "@/lib/email";
 import type { StepLogger } from "./types";
 
 export async function sendSuccessEmailStep(
