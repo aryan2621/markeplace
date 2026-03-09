@@ -463,6 +463,7 @@ export function AppForm({
                 <div className="flex gap-2 items-center">
                   {iconUrlValid && (
                     <div className="size-8 shrink-0 overflow-hidden rounded bg-muted">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
                         src={values.icon.trim()}
                         alt=""

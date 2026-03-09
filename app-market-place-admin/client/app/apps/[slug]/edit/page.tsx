@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useRouter, useParams } from "next/navigation";
+import { useParams } from "next/navigation";
 import { getAppBySlug, getCategories, getDeveloper, submitForReview, updateApp } from "@/lib/api/admin-client";
 import type { App, Category, CreateAppInput, UpdateAppInput } from "@/lib/models";
 import { AppForm } from "@/components/app-form";
@@ -29,7 +29,7 @@ export default function EditAppPage() {
   const [submitting, setSubmitting] = useState(false);
   const [developerVerified, setDeveloperVerified] = useState<boolean | null>(null);
   const [hasChanges, setHasChanges] = useState(false);
-  const router = useRouter();
+
 
   useEffect(() => {
     if (!slug) {

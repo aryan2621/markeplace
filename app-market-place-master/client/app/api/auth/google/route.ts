@@ -1,7 +1,7 @@
 import { google } from "googleapis";
 import { type NextRequest, NextResponse } from "next/server";
 
-export async function GET(req: NextRequest) {
+export async function GET(_req: NextRequest) {
   const baseUrl = process.env.BASE_URL;
   const clientId = process.env.GMAIL_CLIENT_ID;
   const clientSecret = process.env.GMAIL_CLIENT_SECRET;

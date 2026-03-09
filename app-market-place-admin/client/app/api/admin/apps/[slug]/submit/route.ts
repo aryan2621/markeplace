@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getDb } from "@/lib/firebase-admin";
 import { checkAdminRateLimit } from "@/lib/rate-limit";
 import { COLLECTIONS } from "@/lib/firestore-collections";
-import { inngest } from "@/inngest/client";
+
 import { validateSlug } from "@/lib/validation";
 
 export async function POST(
@@ -53,9 +53,14 @@ export async function POST(
       status: "pending_review",
       submittedAt,
     });
-    await inngest.send({
-      name: "app/submitted",
-      data: { appId: slug, slug },
+    const masterUrl = process.env.NEXT_PUBLIC_MASTER_URL || process.env.MASTER_APP_URL || "http://localhost:3000";
+    await fetch(`${masterUrl}/api/master/inngest-trigger`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-admin-secret": process.env.ADMIN_INTERNAL_SECRET || "",
+      },
+      body: JSON.stringify({ slug }),
     });
     return NextResponse.json({
       ok: true,

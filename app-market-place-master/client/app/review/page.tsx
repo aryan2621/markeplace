@@ -7,7 +7,6 @@ import type { ReviewApp } from "@/lib/review-client";
 import { Loader } from "@/components/ui/loader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   Select,
@@ -31,6 +30,7 @@ export default function ReviewQueuePage() {
 
   useEffect(() => {
     let cancelled = false;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setLoading(true);
     const query = statusFilter === "all" ? undefined : statusFilter;
     getReviewApps(query)

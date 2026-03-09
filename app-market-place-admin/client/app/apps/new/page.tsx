@@ -42,7 +42,7 @@ export default function NewAppPage() {
     };
   }, []);
 
-  async function onBeforeSubmit(_values: CreateAppInput | UpdateAppInput) {
+  async function onBeforeSubmit() {
     return new Promise<boolean>((resolve) => {
       resolveBeforeSubmitRef.current = (accepted: boolean) => {
         setTermsDialogOpen(false);

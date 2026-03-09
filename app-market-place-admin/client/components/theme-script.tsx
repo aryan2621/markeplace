@@ -1,4 +1,4 @@
-import Script from "next/script";
+
 
 const THEME_KEY = "app-marketplace-admin-theme";
 
@@ -11,9 +11,5 @@ const themeInitScript = `(function(){
 })();`;
 
 export function ThemeScript() {
-  return (
-    <Script id="theme-init" strategy="beforeInteractive">
-      {themeInitScript}
-    </Script>
-  );
+  return <script id="theme-init" dangerouslySetInnerHTML={{ __html: themeInitScript }} />;
 }

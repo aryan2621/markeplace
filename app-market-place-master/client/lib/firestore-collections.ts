@@ -9,4 +9,5 @@ export const COLLECTIONS = {
   developerStrikes: "developerStrikes",
   appAppeals: "appAppeals",
   settings: "settings",
+  appReports: "appReports",
 } as const;

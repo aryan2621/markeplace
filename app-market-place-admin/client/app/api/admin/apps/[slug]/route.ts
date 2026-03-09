@@ -101,6 +101,13 @@ export async function PATCH(
     }
     const body = await req.json();
     const db = getDb();
+
+    if (body.packageName?.trim()) {
+      const existingPkg = await db.collection(COLLECTIONS.apps).where("packageName", "==", body.packageName.trim()).limit(1).get();
+      if (!existingPkg.empty && existingPkg.docs[0].id !== slug) {
+        return NextResponse.json({ error: "App with this package name already exists" }, { status: 400 });
+      }
+    }
     const appSnap = await getAppIfOwned(db, slug, userId);
     if (!appSnap) {
       const exists = (await db.collection(COLLECTIONS.apps).doc(slug).get()).exists;

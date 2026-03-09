@@ -26,7 +26,7 @@ export const checkReportThresholds = inngest.createFunction(
     retries: 1,
   },
   { cron: "0 0,12 * * *" },
-  async ({ step }) => {
+  async () => {
     const db = getDb();
     const reportsSnap = await db.collection(COLLECTIONS.appReports).get();
     const countBySlug: Record<string, number> = {};
@@ -83,7 +83,6 @@ export const appSubmitted = inngest.createFunction(
     if (appSnap.skip) return { skipped: true, status: appSnap.status };
 
     const app = appSnap.app;
-    const appId = appSnap.id;
     const downloadUrl = app.downloadUrl as string | undefined;
     const developerEmail = (app.developerEmail as string) || "";
 

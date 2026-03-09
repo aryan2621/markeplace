@@ -104,6 +104,13 @@ export async function POST(req: NextRequest) {
     if (existing.exists) {
       return NextResponse.json({ error: "App with this slug already exists" }, { status: 400 });
     }
+
+    if (body.packageName?.trim()) {
+      const existingPkg = await db.collection(COLLECTIONS.apps).where("packageName", "==", body.packageName.trim()).limit(1).get();
+      if (!existingPkg.empty) {
+        return NextResponse.json({ error: "App with this package name already exists" }, { status: 400 });
+      }
+    }
     const raw: Record<string, unknown> = {
       slug,
       name: body.name,

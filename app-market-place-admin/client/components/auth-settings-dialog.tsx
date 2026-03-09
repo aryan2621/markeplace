@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Github, Settings, Mail } from "lucide-react";
+import { Github, Settings } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 
@@ -67,20 +67,7 @@ export function AuthSettingsDialog({ developerVerified, className, isMobile }: A
             ) : null}
           </div>
 
-          <div className="flex flex-col gap-2 rounded-lg border p-4">
-            <div className="flex items-center gap-2 font-semibold">
-              <Mail className="size-5" />
-              Gmail API
-            </div>
-            <p className="text-sm text-muted-foreground">
-              Required to send system emails (approvals, rejections).
-            </p>
-            <Button variant="secondary" className="mt-2 w-full sm:w-auto self-start" asChild>
-              <Link href="/api/auth/google" onClick={() => setOpen(false)}>
-                Connect Gmail API
-              </Link>
-            </Button>
-          </div>
+
         </div>
       </DialogContent>
     </Dialog>

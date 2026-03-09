@@ -31,42 +31,144 @@ export async function GET(req: NextRequest) {
       dbStatus = "Refresh token successfully saved to the database.";
     }
     
+    const isSuccess = Boolean(tokens.refresh_token);
+    
     const html = `
       <!DOCTYPE html>
-      <html>
+      <html lang="en">
         <head>
-          <title>Gmail API Connected - Marketplace</title>
+          <title>Authentication ${isSuccess ? 'Successful' : 'Status'} - Marketplace</title>
           <meta charset="utf-8">
           <meta name="viewport" content="width=device-width, initial-scale=1">
-          <script src="https://cdn.tailwindcss.com"></script>
-          <script>
-            tailwind.config = {
-              theme: {
-                extend: {
-                  fontFamily: {
-                    sans: ['-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'sans-serif']
-                  }
-                }
+          <style>
+            :root {
+              --bg: #ffffff;
+              --text: #111827;
+              --text-muted: #6b7280;
+              --card-bg: #ffffff;
+              --border: #e5e7eb;
+              --success: #16a34a;
+              --success-bg: #f0fdf4;
+              --success-border: #bbf7d0;
+              --btn-bg: #111827;
+              --btn-text: #ffffff;
+              --btn-hover: #374151;
+            }
+            @media (prefers-color-scheme: dark) {
+              :root {
+                --bg: #09090b;
+                --text: #f9fafb;
+                --text-muted: #9ca3af;
+                --card-bg: #18181b;
+                --border: #27272a;
+                --success: #22c55e;
+                --success-bg: rgba(34, 197, 94, 0.1);
+                --success-border: rgba(34, 197, 94, 0.2);
+                --btn-bg: #ffffff;
+                --btn-text: #09090b;
+                --btn-hover: #e4e4e7;
               }
             }
-          </script>
+            body {
+              font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+              background-color: var(--bg);
+              color: var(--text);
+              margin: 0;
+              min-height: 100vh;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              padding: 1rem;
+              box-sizing: border-box;
+            }
+            .container {
+              background-color: var(--card-bg);
+              border: 1px solid var(--border);
+              border-radius: 1rem;
+              padding: 2.5rem 2rem;
+              max-w: 24rem;
+              width: 100%;
+              text-align: center;
+              box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            }
+            .icon {
+              width: 4rem;
+              height: 4rem;
+              background-color: var(--success);
+              border-radius: 50%;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              color: white;
+              font-size: 2rem;
+              margin: 0 auto 1.5rem;
+            }
+            h1 {
+              font-size: 1.5rem;
+              font-weight: 700;
+              margin: 0 0 0.5rem;
+            }
+            p {
+              color: var(--text-muted);
+              margin: 0 0 2rem;
+              line-height: 1.5;
+            }
+            .status-box {
+              background-color: ${isSuccess ? 'var(--success-bg)' : 'transparent'};
+              border: 1px solid ${isSuccess ? 'var(--success-border)' : 'var(--border)'};
+              color: ${isSuccess ? 'var(--success)' : 'var(--text-muted)'};
+              border-radius: 0.5rem;
+              padding: 1rem;
+              font-family: monospace;
+              font-size: 0.875rem;
+              text-align: left;
+              margin-bottom: 2rem;
+              word-break: break-word;
+            }
+            .btn {
+              display: inline-flex;
+              align-items: center;
+              justify-content: center;
+              background-color: var(--btn-bg);
+              color: var(--btn-text);
+              text-decoration: none;
+              font-weight: 500;
+              padding: 0.75rem 1.5rem;
+              border-radius: 0.5rem;
+              width: 100%;
+              box-sizing: border-box;
+              transition: background-color 0.2s;
+              border: none;
+              cursor: pointer;
+              font-size: 1rem;
+            }
+            .btn:hover {
+              background-color: var(--btn-hover);
+            }
+          </style>
         </head>
-        <body class="min-h-screen bg-gradient-to-br from-violet-600 to-purple-700 flex items-center justify-center p-4">
-          <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8 text-center">
-            <div class="w-16 h-16 bg-gradient-to-br from-violet-600 to-purple-700 rounded-full flex items-center justify-center mx-auto mb-6 text-white text-2xl font-bold">
-              ✓
-            </div>
-            <h1 class="text-2xl font-bold text-gray-900 mb-2">Gmail API Connected</h1>
-            <p class="text-gray-600 mb-8">Your marketplace email service is now configured</p>
+        <body>
+          <div class="container">
+            <div class="icon">✓</div>
+            <h1>Authentication Successful</h1>
+            <p>Your authentication flow is complete, and the application is connected.</p>
             
-            <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-6 text-left">
-              <div class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Status</div>
-              <div class="font-mono text-sm ${tokens.refresh_token ? 'text-green-700 bg-green-50 border-green-200' : 'text-gray-700'} p-2 rounded border">
-                ${dbStatus}
-              </div>
+            <div class="status-box">
+              ${dbStatus}
             </div>
             
-            <p class="text-sm text-gray-500">You can now close this window and return to the marketplace.</p>
+            <button class="btn" onclick="handleClose()">Return to Application</button>
+            <script>
+              function handleClose() {
+                // If this is a popup, try to close it and return focus to parent
+                if (window.opener) {
+                  window.close();
+                } else {
+                  // Fallback: forcefully redirect back to homepage
+                  window.location.href = '/'; 
+                }
+              }
+            </script>
           </div>
         </body>
       </html>

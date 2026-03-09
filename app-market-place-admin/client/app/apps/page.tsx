@@ -72,6 +72,7 @@ function AppIconThumb({ icon, name }: { icon: string | null | undefined; name: s
 
   return (
     <div className="size-10 shrink-0 overflow-hidden rounded-lg bg-muted">
+      {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src={icon}
         alt=""
@@ -121,6 +122,7 @@ function AppsListPageContent() {
 
   useEffect(() => {
     let cancelled = false;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setLoading(true);
     setError(null);
     Promise.all([getApps(), getCategories()])
