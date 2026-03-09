@@ -79,35 +79,47 @@ export async function sendAppApprovedEmail(params: {
   to: string;
   appName: string;
   slug: string;
-  appUrl: string | null;
 }): Promise<{ error?: Error }> {
-  // Config checking handled in sendEmailApi
-  
-  const { to, appName, slug, appUrl } = params;
-  const linkHtml = appUrl
-    ? `<p><a href="${escapeHtml(appUrl)}">View your app in the marketplace</a></p>`
-    : "<p>Your app is now live in the marketplace.</p>";
-    
   return sendEmailApi(
-      to,
-      `App approved: ${appName}`,
-      `<p>Your app "<strong>${escapeHtml(appName)}</strong>" (${escapeHtml(slug)}) has been approved and published.</p>${linkHtml}`
+    params.to,
+    `App approved: ${params.appName}`,
+    `<p>Congratulations! Your app "<strong>${escapeHtml(params.appName)}</strong>" has been approved and is now live on the marketplace.</p>`
   );
 }
 
 export async function sendAppRejectedEmail(params: {
   to: string;
   appName: string;
+  reason: string;
+}): Promise<{ error?: Error }> {
+  return sendEmailApi(
+    params.to,
+    `App rejected: ${params.appName}`,
+    `<p>Your app "<strong>${escapeHtml(params.appName)}</strong>" has been rejected.</p><p><strong>Reason:</strong> ${escapeHtml(params.reason)}</p><p>Please fix these issues and resubmit.</p>`
+  );
+}
+
+export async function sendAppSubmissionFailureEmail(params: {
+  to: string;
+  appName: string;
   slug: string;
   reason: string;
 }): Promise<{ error?: Error }> {
-  // Config checking handled in sendEmailApi
-  
-  const { to, appName, slug, reason } = params;
-  
   return sendEmailApi(
-      to,
-      `App not approved: ${appName}`,
-      `<p>Your app "<strong>${escapeHtml(appName)}</strong>" (${escapeHtml(slug)}) was not approved.</p><p><strong>Reason:</strong> ${escapeHtml(reason)}</p><p>You can address the feedback and submit again from your developer dashboard.</p>`
+      params.to,
+      `App submission failed: ${params.appName}`,
+      `<p>Your app "<strong>${escapeHtml(params.appName)}</strong>" (${escapeHtml(params.slug)}) could not be accepted for review.</p><p><strong>Reason:</strong> ${escapeHtml(params.reason)}</p><p>Please fix the issues and submit again.</p>`
+  );
+}
+
+export async function sendAppSubmissionSuccessEmail(params: {
+  to: string;
+  appName: string;
+  slug: string;
+}): Promise<{ error?: Error }> {
+  return sendEmailApi(
+      params.to,
+      `App submitted for review: ${params.appName}`,
+      `<p>Your app "<strong>${escapeHtml(params.appName)}</strong>" (${escapeHtml(params.slug)}) has been accepted and is now in the review queue.</p><p>We will notify you once the review is complete.</p>`
   );
 }
