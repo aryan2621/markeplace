@@ -2,12 +2,19 @@ import { google } from "googleapis";
 import { type NextRequest, NextResponse } from "next/server";
 import { getDb } from "@/lib/firebase-admin";
 import { COLLECTIONS } from "@/lib/firestore-collections";
+import { logRequest, logStep, logResponse, logError } from "@/lib/api-logger";
 
 export async function GET(req: NextRequest) {
+  const route = "GET /api/auth/google/callback";
+  const start = Date.now();
+  logRequest(route, "GET", {});
+
   const searchParams = req.nextUrl.searchParams;
   const code = searchParams.get("code");
 
   if (!code) {
+    logStep(route, "validation_failed", { reason: "missing_code" });
+    logResponse(route, 400, Date.now() - start, {});
     return new NextResponse("Missing code", { status: 400 });
   }
 
@@ -19,9 +26,9 @@ export async function GET(req: NextRequest) {
 
   try {
     const { tokens } = await oauth2Client.getToken(code);
-    
+
     let dbStatus = "No refresh token returned. Did you already authorize this app? Go to Google Account Permissions and explicitly remove this app, then try again to force a new refresh token.";
-    
+
     if (tokens.refresh_token) {
       const db = getDb();
       await db.collection(COLLECTIONS.settings).doc("email").set({
@@ -30,8 +37,9 @@ export async function GET(req: NextRequest) {
       }, { merge: true });
       dbStatus = "Refresh token successfully saved to the database.";
     }
-    
+
     const isSuccess = Boolean(tokens.refresh_token);
+    logStep(route, isSuccess ? "success" : "no_refresh_token", {});
     
     const html = `
       <!DOCTYPE html>
@@ -174,11 +182,12 @@ export async function GET(req: NextRequest) {
       </html>
     `;
 
+    logResponse(route, 200, Date.now() - start, {});
     return new NextResponse(html, {
       headers: { "Content-Type": "text/html" },
     });
   } catch (error) {
-    console.error("Error exchanging code for token", error);
+    logError(route, error, { status: 500, durationMs: Date.now() - start });
     return new NextResponse("Failed to exchange code", { status: 500 });
   }
 }

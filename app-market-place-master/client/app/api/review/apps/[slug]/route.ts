@@ -5,6 +5,7 @@ import { getDb } from "@/lib/firebase-admin";
 import { checkMasterRateLimit } from "@/lib/rate-limit";
 import { requireMasterUser } from "@/lib/master-allowlist";
 import { COLLECTIONS } from "@/lib/firestore-collections";
+import { logRequest, logStep, logResponse, logError } from "@/lib/api-logger";
 
 function docToApp(doc: DocumentSnapshot) {
   const d = doc.data()!;
@@ -44,19 +45,30 @@ export async function GET(
   _req: NextRequest,
   { params }: { params: Promise<{ slug: string }> }
 ) {
+  const route = "GET /api/review/apps/[slug]";
+  const start = Date.now();
   const { userId } = await auth();
+  const slug = (await params).slug;
+  logRequest(route, "GET", { slug, userId: userId ?? undefined });
   if (!userId) {
+    logStep(route, "auth_failed", { status: 401 });
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   const allowRes = await requireMasterUser();
-  if (allowRes) return allowRes;
+  if (allowRes) {
+    logStep(route, "auth_failed", { status: 403 });
+    return allowRes;
+  }
   const rateLimitRes = await checkMasterRateLimit(userId);
-  if (rateLimitRes) return rateLimitRes;
+  if (rateLimitRes) {
+    logStep(route, "rate_limited", { status: 429 });
+    return rateLimitRes;
+  }
   try {
-    const { slug } = await params;
     const db = getDb();
     const appSnap = await db.collection(COLLECTIONS.apps).doc(slug).get();
     if (!appSnap.exists) {
+      logStep(route, "not_found", { slug });
       return NextResponse.json({ error: "App not found" }, { status: 404 });
     }
     const app = docToApp(appSnap);
@@ -67,6 +79,7 @@ export async function GET(
     const riskSnap = await db.collection(COLLECTIONS.riskLogs).where("appId", "==", slug).get();
     const risks = riskSnap.docs.map((d) => d.data()).sort((a, b) => (b.createdAt ?? 0) - (a.createdAt ?? 0));
     const latestRisk = risks[0] ?? null;
+    logResponse(route, 200, Date.now() - start, { slug });
     return NextResponse.json({
       app,
       dataSafety,
@@ -74,6 +87,7 @@ export async function GET(
       latestRisk,
     });
   } catch (e) {
+    logError(route, e, { status: 500, durationMs: Date.now() - start });
     const message = e instanceof Error ? e.message : "Failed to load app";
     return NextResponse.json({ error: message }, { status: 500 });
   }

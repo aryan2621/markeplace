@@ -6,6 +6,7 @@ import { checkAdminRateLimit } from "@/lib/rate-limit";
 import { COLLECTIONS } from "@/lib/firestore-collections";
 import { getAppIfOwned } from "@/lib/admin-apps";
 import { validateSlug } from "@/lib/validation";
+import { logRequest, logStep, logResponse, logError } from "@/lib/api-logger";
 
 function docToApp(doc: DocumentSnapshot) {
   const d = doc.data()!;
@@ -55,29 +56,40 @@ export async function GET(
   _req: NextRequest,
   { params }: { params: Promise<{ slug: string }> }
 ) {
+  const route = "GET /api/admin/apps/[slug]";
+  const start = Date.now();
   const { userId } = await auth();
+  const slug = (await params).slug;
+  logRequest(route, "GET", { slug, userId: userId ?? undefined });
   if (!userId) {
+    logStep(route, "auth_failed", { status: 401 });
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   const rateLimitRes = await checkAdminRateLimit(userId);
-  if (rateLimitRes) return rateLimitRes;
+  if (rateLimitRes) {
+    logStep(route, "rate_limited", { status: 429 });
+    return rateLimitRes;
+  }
   try {
-    const { slug } = await params;
     const slugValidation = validateSlug(slug);
     if (!slugValidation.ok) {
+      logStep(route, "validation_failed", { reason: slugValidation.error, slug });
       return NextResponse.json({ error: slugValidation.error }, { status: 400 });
     }
     const db = getDb();
     const appSnap = await getAppIfOwned(db, slug, userId);
     if (!appSnap) {
       const exists = (await db.collection(COLLECTIONS.apps).doc(slug).get()).exists;
+      logStep(route, exists ? "forbidden" : "not_found", { slug });
       return NextResponse.json(
         { error: exists ? "Forbidden" : "App not found" },
         { status: exists ? 403 : 404 }
       );
     }
+    logResponse(route, 200, Date.now() - start, { slug });
     return NextResponse.json(docToApp(appSnap));
   } catch (e) {
+    logError(route, e, { status: 500, durationMs: Date.now() - start });
     const message = e instanceof Error ? e.message : "Failed to load app";
     return NextResponse.json({ error: message }, { status: 500 });
   }
@@ -87,16 +99,24 @@ export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ slug: string }> }
 ) {
+  const route = "PATCH /api/admin/apps/[slug]";
+  const start = Date.now();
   const { userId } = await auth();
+  const slug = (await params).slug;
+  logRequest(route, "PATCH", { slug, userId: userId ?? undefined });
   if (!userId) {
+    logStep(route, "auth_failed", { status: 401 });
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   const rateLimitRes = await checkAdminRateLimit(userId);
-  if (rateLimitRes) return rateLimitRes;
+  if (rateLimitRes) {
+    logStep(route, "rate_limited", { status: 429 });
+    return rateLimitRes;
+  }
   try {
-    const { slug } = await params;
     const slugValidation = validateSlug(slug);
     if (!slugValidation.ok) {
+      logStep(route, "validation_failed", { reason: slugValidation.error, slug });
       return NextResponse.json({ error: slugValidation.error }, { status: 400 });
     }
     const body = await req.json();
@@ -105,12 +125,14 @@ export async function PATCH(
     if (body.packageName?.trim()) {
       const existingPkg = await db.collection(COLLECTIONS.apps).where("packageName", "==", body.packageName.trim()).limit(1).get();
       if (!existingPkg.empty && existingPkg.docs[0].id !== slug) {
+        logStep(route, "validation_failed", { reason: "package_name_exists", slug });
         return NextResponse.json({ error: "App with this package name already exists" }, { status: 400 });
       }
     }
     const appSnap = await getAppIfOwned(db, slug, userId);
     if (!appSnap) {
       const exists = (await db.collection(COLLECTIONS.apps).doc(slug).get()).exists;
+      logStep(route, exists ? "forbidden" : "not_found", { slug });
       return NextResponse.json(
         { error: exists ? "Forbidden" : "App not found" },
         { status: exists ? 403 : 404 }
@@ -179,8 +201,10 @@ export async function PATCH(
       });
     }
     const updated = await ref.get();
+    logResponse(route, 200, Date.now() - start, { slug });
     return NextResponse.json(docToApp(updated));
   } catch (e) {
+    logError(route, e, { status: 500, durationMs: Date.now() - start });
     const message = e instanceof Error ? e.message : "Failed to update app";
     return NextResponse.json({ error: message }, { status: 500 });
   }

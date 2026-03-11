@@ -5,6 +5,7 @@ import { getDb } from "@/lib/firebase-admin";
 import { checkMasterRateLimit } from "@/lib/rate-limit";
 import { requireMasterUser } from "@/lib/master-allowlist";
 import { COLLECTIONS } from "@/lib/firestore-collections";
+import { logRequest, logStep, logResponse, logError } from "@/lib/api-logger";
 
 function docToApp(doc: DocumentSnapshot) {
   const d = doc.data()!;
@@ -41,14 +42,24 @@ function docToApp(doc: DocumentSnapshot) {
 }
 
 export async function GET(req: NextRequest) {
+  const route = "GET /api/review/apps";
+  const start = Date.now();
   const { userId } = await auth();
+  logRequest(route, "GET", { userId: userId ?? undefined });
   if (!userId) {
+    logStep(route, "auth_failed", { status: 401 });
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   const allowRes = await requireMasterUser();
-  if (allowRes) return allowRes;
+  if (allowRes) {
+    logStep(route, "auth_failed", { status: 403 });
+    return allowRes;
+  }
   const rateLimitRes = await checkMasterRateLimit(userId);
-  if (rateLimitRes) return rateLimitRes;
+  if (rateLimitRes) {
+    logStep(route, "rate_limited", { status: 429 });
+    return rateLimitRes;
+  }
   try {
     const db = getDb();
     const { searchParams } = new URL(req.url);
@@ -63,8 +74,10 @@ export async function GET(req: NextRequest) {
       docs = docs.filter((d) => d.data().status === statusFilter);
     }
     const apps = docs.map(docToApp);
+    logResponse(route, 200, Date.now() - start, { count: apps.length });
     return NextResponse.json(apps);
   } catch (e) {
+    logError(route, e, { status: 500, durationMs: Date.now() - start });
     const message = e instanceof Error ? e.message : "Failed to load apps";
     return NextResponse.json({ error: message }, { status: 500 });
   }

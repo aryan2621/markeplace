@@ -5,6 +5,7 @@ import { getDb } from "@/lib/firebase-admin";
 import { checkAdminRateLimit } from "@/lib/rate-limit";
 import { COLLECTIONS } from "@/lib/firestore-collections";
 import { validateSlug } from "@/lib/validation";
+import { logRequest, logStep, logResponse, logError } from "@/lib/api-logger";
 
 function docToApp(doc: DocumentSnapshot) {
   const d = doc.data()!;
@@ -51,12 +52,19 @@ function docToApp(doc: DocumentSnapshot) {
 }
 
 export async function GET(req: NextRequest) {
+  const route = "GET /api/admin/apps";
+  const start = Date.now();
   const { userId } = await auth();
+  logRequest(route, "GET", { userId: userId ?? undefined });
   if (!userId) {
+    logStep(route, "auth_failed", { status: 401 });
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   const rateLimitRes = await checkAdminRateLimit(userId);
-  if (rateLimitRes) return rateLimitRes;
+  if (rateLimitRes) {
+    logStep(route, "rate_limited", { status: 429 });
+    return rateLimitRes;
+  }
   try {
     const db = getDb();
     const { searchParams } = new URL(req.url);
@@ -77,37 +85,49 @@ export async function GET(req: NextRequest) {
           r.shortDescription.toLowerCase().includes(lower)
       );
     }
+    logResponse(route, 200, Date.now() - start, { count: rows.length });
     return NextResponse.json(rows);
   } catch (e) {
+    logError(route, e, { status: 500, durationMs: Date.now() - start });
     const message = e instanceof Error ? e.message : "Failed to load apps";
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }
 
 export async function POST(req: NextRequest) {
+  const route = "POST /api/admin/apps";
+  const start = Date.now();
   const { userId } = await auth();
+  logRequest(route, "POST", { userId: userId ?? undefined });
   if (!userId) {
+    logStep(route, "auth_failed", { status: 401 });
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   const rateLimitRes = await checkAdminRateLimit(userId);
-  if (rateLimitRes) return rateLimitRes;
+  if (rateLimitRes) {
+    logStep(route, "rate_limited", { status: 429 });
+    return rateLimitRes;
+  }
   try {
     const body = await req.json();
     const slugRaw = typeof body.slug === "string" ? body.slug.trim() : "";
     const slugValidation = validateSlug(slugRaw);
     if (!slugValidation.ok) {
+      logStep(route, "validation_failed", { reason: slugValidation.error });
       return NextResponse.json({ error: slugValidation.error }, { status: 400 });
     }
     const slug = slugRaw;
     const db = getDb();
     const existing = await db.collection(COLLECTIONS.apps).doc(slug).get();
     if (existing.exists) {
+      logStep(route, "validation_failed", { reason: "slug_exists", slug });
       return NextResponse.json({ error: "App with this slug already exists" }, { status: 400 });
     }
 
     if (body.packageName?.trim()) {
       const existingPkg = await db.collection(COLLECTIONS.apps).where("packageName", "==", body.packageName.trim()).limit(1).get();
       if (!existingPkg.empty) {
+        logStep(route, "validation_failed", { reason: "package_name_exists" });
         return NextResponse.json({ error: "App with this package name already exists" }, { status: 400 });
       }
     }
@@ -165,8 +185,11 @@ export async function POST(req: NextRequest) {
       });
     }
     const created = await db.collection(COLLECTIONS.apps).doc(slug).get();
+    logStep(route, "app_created", { slug });
+    logResponse(route, 200, Date.now() - start, { slug });
     return NextResponse.json(docToApp(created));
   } catch (e) {
+    logError(route, e, { status: 500, durationMs: Date.now() - start });
     const message = e instanceof Error ? e.message : "Failed to create app";
     return NextResponse.json({ error: message }, { status: 500 });
   }
