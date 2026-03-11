@@ -8,6 +8,7 @@ const isPublicRoute = createRouteMatcher([
   "/signup",
   "/privacy",
   "/terms",
+  "/api/inngest",
   "/api/auth/google(.*)",
 ]);
 

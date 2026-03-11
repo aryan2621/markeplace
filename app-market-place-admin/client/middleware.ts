@@ -8,9 +8,7 @@ const isPublicRoute = createRouteMatcher([
   "/signup",
   "/privacy",
   "/terms",
-  "/api/inngest",
   "/auth/github-callback",
-  "/api/auth/google(.*)",
 ]);
 
 const clerkHandler = clerkMiddleware(async (auth, req) => {
