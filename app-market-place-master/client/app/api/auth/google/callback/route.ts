@@ -86,7 +86,7 @@ export async function GET(req: NextRequest) {
               border: 1px solid var(--border);
               border-radius: 1rem;
               padding: 2.5rem 2rem;
-              max-w: 24rem;
+              max-width: 24rem;
               width: 100%;
               text-align: center;
               box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
