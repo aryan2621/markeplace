@@ -9,6 +9,7 @@ const isPublicRoute = createRouteMatcher([
   "/privacy",
   "/terms",
   "/api/inngest",
+  "/api/master/inngest-trigger",
   "/api/auth/google(.*)",
 ]);
 
