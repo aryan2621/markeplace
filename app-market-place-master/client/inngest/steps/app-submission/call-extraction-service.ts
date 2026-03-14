@@ -2,7 +2,7 @@ import { getPresignedReadUrl } from "@/lib/filebase";
 import { EXTRACTION_SERVICE_URL } from "../constants";
 import type { ExtractionResult, StepLogger } from "./types";
 
-const EXTRACTION_PRESIGNED_URL_EXPIRY_SECONDS = 900;
+const EXTRACTION_PRESIGNED_URL_EXPIRY_SECONDS = 300; // 5 minutes
 
 export async function callExtractionServiceStep(
   slug: string,
