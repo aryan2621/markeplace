@@ -21,7 +21,8 @@ export function validateSlug(slug: string): { ok: true } | { ok: false; error: s
   return { ok: true };
 }
 
-const UPLOAD_KEY_PATTERN = /^uploads\/[a-zA-Z0-9_-]+(\.[a-zA-Z0-9]+)?$/;
+const UPLOAD_KEY_ONE_SEGMENT = /^uploads\/[a-zA-Z0-9_-]+(\.[a-zA-Z0-9]+)?$/;
+const UPLOAD_KEY_USER_SCOPED = /^uploads\/[a-zA-Z0-9_-]+\/[a-zA-Z0-9_-]+(\.[a-zA-Z0-9]+)?$/;
 
 export function validateUploadKey(key: string): { ok: true } | { ok: false; error: string } {
   if (typeof key !== "string" || !key.trim()) {
@@ -34,8 +35,23 @@ export function validateUploadKey(key: string): { ok: true } | { ok: false; erro
   if (!trimmed.startsWith("uploads/")) {
     return { ok: false, error: "path must start with uploads/" };
   }
-  if (!UPLOAD_KEY_PATTERN.test(trimmed)) {
-    return { ok: false, error: "path must match uploads/[id] or uploads/[id].[ext]" };
+  if (!UPLOAD_KEY_ONE_SEGMENT.test(trimmed) && !UPLOAD_KEY_USER_SCOPED.test(trimmed)) {
+    return { ok: false, error: "path must match uploads/[id].[ext] or uploads/[userId]/[id].[ext]" };
+  }
+  return { ok: true };
+}
+
+/** Validates key format and that the key belongs to the given user (uploads/{userId}/...). */
+export function validateUploadKeyOwnership(
+  key: string,
+  userId: string
+): { ok: true } | { ok: false; error: string } {
+  const format = validateUploadKey(key);
+  if (!format.ok) return format;
+  const trimmed = key.trim();
+  const prefix = `uploads/${userId}/`;
+  if (!trimmed.startsWith(prefix)) {
+    return { ok: false, error: "You can only use storage keys that belong to your account" };
   }
   return { ok: true };
 }

@@ -32,7 +32,8 @@ export async function POST(req: NextRequest) {
         if (name.includes(".")) ext = name.slice(name.lastIndexOf("."));
       } catch { }
     }
-    const path = `uploads/${randomUUID()}${ext}`;
+    const safeUserId = userId.replace(/[^a-zA-Z0-9_-]/g, "") || "u";
+    const path = `uploads/${safeUserId}/${randomUUID()}${ext}`;
 
     const [uploadUrl, readUrl] = await Promise.all([
       getPresignedUploadUrl(path, UPLOAD_URL_EXPIRY_SECONDS, "application/octet-stream"),

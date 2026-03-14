@@ -4,7 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getDb } from "@/lib/firebase-admin";
 import { checkAdminRateLimit } from "@/lib/rate-limit";
 import { COLLECTIONS } from "@/lib/firestore-collections";
-import { validateSlug, validateUploadKey } from "@/lib/validation";
+import { validateSlug, validateUploadKeyOwnership } from "@/lib/validation";
 import { logRequest, logStep, logResponse, logError } from "@/lib/api-logger";
 
 function docToApp(doc: DocumentSnapshot) {
@@ -142,7 +142,7 @@ export async function POST(req: NextRequest) {
     const downloadS3KeyVal =
       typeof downloadS3KeyRaw === "string" ? downloadS3KeyRaw.trim() : "";
     if (downloadS3KeyVal) {
-      const keyValidation = validateUploadKey(downloadS3KeyVal);
+      const keyValidation = validateUploadKeyOwnership(downloadS3KeyVal, userId);
       if (!keyValidation.ok) {
         logStep(route, "validation_failed", { reason: keyValidation.error });
         return NextResponse.json({ error: keyValidation.error }, { status: 400 });

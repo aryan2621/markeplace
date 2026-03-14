@@ -5,7 +5,7 @@ import { getPresignedReadUrl } from "@/lib/filebase";
 import { checkMasterRateLimit } from "@/lib/rate-limit";
 import { requireMasterUser } from "@/lib/master-allowlist";
 import { COLLECTIONS } from "@/lib/firestore-collections";
-import { validateSlug } from "@/lib/validation";
+import { validateSlug, validateDownloadKey } from "@/lib/validation";
 import { logRequest, logStep, logResponse, logError } from "@/lib/api-logger";
 
 const DOWNLOAD_SIGNED_URL_EXPIRY_SECONDS = 180; // 3 minutes
@@ -53,6 +53,14 @@ export async function GET(
     const key = (appSnap.data()?.downloadS3Key as string)?.trim();
     if (!key) {
       logStep(route, "no_download", { slug });
+      return NextResponse.json(
+        { error: "Download not available for this app" },
+        { status: 404 }
+      );
+    }
+    const keyValidation = validateDownloadKey(key);
+    if (!keyValidation.ok) {
+      logStep(route, "validation_failed", { reason: keyValidation.error, slug });
       return NextResponse.json(
         { error: "Download not available for this app" },
         { status: 404 }

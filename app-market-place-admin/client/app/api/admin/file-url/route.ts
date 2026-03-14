@@ -2,7 +2,7 @@ import { auth } from "@clerk/nextjs/server";
 import { NextRequest, NextResponse } from "next/server";
 import { getPresignedReadUrl, objectExists } from "@/lib/filebase";
 import { checkAdminRateLimit } from "@/lib/rate-limit";
-import { validateUploadKey } from "@/lib/validation";
+import { validateUploadKeyOwnership } from "@/lib/validation";
 import { logRequest, logStep, logResponse, logError } from "@/lib/api-logger";
 
 export async function GET(req: NextRequest) {
@@ -20,7 +20,7 @@ export async function GET(req: NextRequest) {
     return rateLimitRes;
   }
   const path = req.nextUrl.searchParams.get("storageId") ?? req.nextUrl.searchParams.get("key");
-  const keyValidation = validateUploadKey(path ?? "");
+  const keyValidation = validateUploadKeyOwnership(path ?? "", userId);
   if (!keyValidation.ok) {
     logStep(route, "validation_failed", { reason: keyValidation.error });
     return NextResponse.json({ error: keyValidation.error }, { status: 400 });

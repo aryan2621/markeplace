@@ -38,8 +38,9 @@ export function validateDownloadKey(key: string): { ok: true } | { ok: false; er
   if (!trimmed.startsWith("uploads/")) {
     return { ok: false, error: "Invalid download key" };
   }
-  const UPLOAD_KEY_PATTERN = /^uploads\/[a-zA-Z0-9_-]+(\.[a-zA-Z0-9]+)?$/;
-  if (!UPLOAD_KEY_PATTERN.test(trimmed)) {
+  const ONE_SEGMENT = /^uploads\/[a-zA-Z0-9_-]+(\.[a-zA-Z0-9]+)?$/;
+  const USER_SCOPED = /^uploads\/[a-zA-Z0-9_-]+\/[a-zA-Z0-9_-]+(\.[a-zA-Z0-9]+)?$/;
+  if (!ONE_SEGMENT.test(trimmed) && !USER_SCOPED.test(trimmed)) {
     return { ok: false, error: "Invalid download key" };
   }
   return { ok: true };

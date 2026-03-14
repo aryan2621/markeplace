@@ -20,3 +20,19 @@ export function validateSlug(slug: string): { ok: true } | { ok: false; error: s
   }
   return { ok: true };
 }
+
+export function validateDownloadKey(key: string): { ok: true } | { ok: false; error: string } {
+  if (typeof key !== "string" || !key.trim()) {
+    return { ok: false, error: "Download key required" };
+  }
+  const trimmed = key.trim();
+  if (trimmed.includes("..") || !trimmed.startsWith("uploads/")) {
+    return { ok: false, error: "Invalid download key" };
+  }
+  const ONE_SEGMENT = /^uploads\/[a-zA-Z0-9_-]+(\.[a-zA-Z0-9]+)?$/;
+  const USER_SCOPED = /^uploads\/[a-zA-Z0-9_-]+\/[a-zA-Z0-9_-]+(\.[a-zA-Z0-9]+)?$/;
+  if (!ONE_SEGMENT.test(trimmed) && !USER_SCOPED.test(trimmed)) {
+    return { ok: false, error: "Invalid download key" };
+  }
+  return { ok: true };
+}
