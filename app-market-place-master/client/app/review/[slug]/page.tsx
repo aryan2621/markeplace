@@ -217,22 +217,14 @@ export default function ReviewDetailPage() {
                         Privacy policy
                       </a>
                     )}
-                    {(() => {
-                      const base = (process.env.NEXT_PUBLIC_MARKETPLACE_APP_BASE_URL ?? "").replace(/\/$/, "");
-                      const href = base ? `${base}/api/apps/${data.app.slug}/download` : null;
-                      return href ? (
-                        <a
-                          href={href}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-sm font-medium text-primary underline underline-offset-4 hover:no-underline break-all"
-                        >
-                          Download APK
-                        </a>
-                      ) : (
-                        <span className="text-sm text-muted-foreground">Download (set NEXT_PUBLIC_MARKETPLACE_APP_BASE_URL for link)</span>
-                      );
-                    })()}
+                    <a
+                      href={`/api/review/apps/${data.app.slug}/download`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-sm font-medium text-primary underline underline-offset-4 hover:no-underline break-all"
+                    >
+                      Download APK
+                    </a>
                   </div>
                 </div>
               </CardContent>
@@ -256,22 +248,14 @@ export default function ReviewDetailPage() {
                   status="info"
                   title="APK download"
                   result={
-                    (() => {
-                      const base = (process.env.NEXT_PUBLIC_MARKETPLACE_APP_BASE_URL ?? "").replace(/\/$/, "");
-                      const href = base ? `${base}/api/apps/${data.app.slug}/download` : null;
-                      return href ? (
-                        <a
-                          href={href}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-primary underline underline-offset-2 text-sm"
-                        >
-                          Open download link
-                        </a>
-                      ) : (
-                        <span className="text-muted-foreground text-sm">Set NEXT_PUBLIC_MARKETPLACE_APP_BASE_URL for link</span>
-                      );
-                    })()
+                    <a
+                      href={`/api/review/apps/${data.app.slug}/download`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-primary underline underline-offset-2 text-sm"
+                    >
+                      Open download link
+                    </a>
                   }
                 />
 

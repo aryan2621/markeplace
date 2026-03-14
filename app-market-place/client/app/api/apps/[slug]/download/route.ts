@@ -5,7 +5,7 @@ import { checkPublicRateLimit } from "@/lib/rate-limit";
 import { validateSlug } from "@/lib/validation";
 import { logRequest, logStep, logResponse, logError } from "@/lib/api-logger";
 
-const DOWNLOAD_SIGNED_URL_EXPIRY_SECONDS = 600; // 10 minutes
+const DOWNLOAD_SIGNED_URL_EXPIRY_SECONDS = 180; // 3 minutes
 
 export async function GET(
   req: NextRequest,
