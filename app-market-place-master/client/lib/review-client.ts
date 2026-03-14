@@ -31,6 +31,8 @@ export type ReviewAppDetail = {
     rejectionReason?: string | null;
     lastVerifiedAt?: string | null;
     packageName?: string | null;
+    version?: string | null;
+    versionCode?: number | null;
   };
   dataSafety: Record<string, unknown> | null;
   permissions: { permissionName: string; protectionLevel?: string }[];

@@ -309,6 +309,28 @@ export default function ReviewDetailPage() {
                 />
 
                 <ReviewStep
+                  icon={Package}
+                  status="info"
+                  title="Version"
+                  result={
+                    <span className="text-sm">
+                      {data.app.version != null && data.app.version !== "" ? (
+                        <>
+                          {data.app.version}
+                          {data.app.versionCode != null && (
+                            <> (version code {data.app.versionCode})</>
+                          )}
+                        </>
+                      ) : data.app.versionCode != null ? (
+                        <>Version code {data.app.versionCode}</>
+                      ) : (
+                        <span className="text-muted-foreground">Not extracted</span>
+                      )}
+                    </span>
+                  }
+                />
+
+                <ReviewStep
                   icon={Shield}
                   status="info"
                   title="Permissions"
