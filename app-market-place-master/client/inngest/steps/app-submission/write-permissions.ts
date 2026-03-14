@@ -5,6 +5,12 @@ import type { StepLogger } from "./types";
 
 type Permission = { name: string; protectionLevel: string };
 
+function toVersionCode(value: number | string | null | undefined): number | null {
+  if (value == null) return null;
+  const n = typeof value === "number" ? value : parseInt(String(value), 10);
+  return Number.isNaN(n) ? null : n;
+}
+
 export async function writePermissionsStep(
   params: {
     slug: string;
@@ -12,10 +18,12 @@ export async function writePermissionsStep(
     appRef: DocumentReference;
     permissions: Permission[];
     packageName: string | null;
+    version?: string | null;
+    versionCode?: number | string | null;
     logger: StepLogger;
   }
 ): Promise<{ permissionsWritten: number }> {
-  const { slug, db, appRef, permissions, packageName, logger } = params;
+  const { slug, db, appRef, permissions, packageName, version, versionCode, logger } = params;
   logger.info("Writing permissions to store", { slug, count: permissions.length });
   const batch = db.batch();
   const permColl = db.collection(COLLECTIONS.appPermissions);
@@ -26,8 +34,13 @@ export async function writePermissionsStep(
     batch.set(ref, { appId: slug, permissionName: p.name, protectionLevel: p.protectionLevel || "unknown" });
   });
   await batch.commit();
-  if (packageName !== null) {
-    await appRef.update({ packageName, lastVerifiedAt: Date.now() });
+  const appUpdate: Record<string, unknown> = { lastVerifiedAt: Date.now() };
+  if (packageName !== null && packageName !== undefined) appUpdate.packageName = packageName;
+  if (version !== null && version !== undefined && String(version).trim() !== "") appUpdate.version = String(version).trim();
+  const code = toVersionCode(versionCode);
+  if (code !== null) appUpdate.versionCode = code;
+  if (Object.keys(appUpdate).length > 1) {
+    await appRef.update(appUpdate);
   }
   return { permissionsWritten: permissions.length };
 }

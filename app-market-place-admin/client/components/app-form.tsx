@@ -60,9 +60,6 @@ type AppFormValues = {
   size: string;
   featuredOrder: string;
   downloadS3Key: string;
-  version: string;
-  versionCode: string;
-  packageName: string;
   privacyPolicyUrl: string;
   featureGraphic: string;
   apkFile: string;
@@ -99,9 +96,6 @@ function toFormValues(input: Partial<CreateAppInput> | null): AppFormValues {
     size: input?.size ?? "",
     featuredOrder: input?.featuredOrder != null ? String(input.featuredOrder) : "",
     downloadS3Key: input?.downloadS3Key ?? "",
-    version: input?.version ?? "",
-    versionCode: input?.versionCode != null ? String(input.versionCode) : "",
-    packageName: (raw?.packageName as string) ?? "",
     privacyPolicyUrl: (raw?.privacyPolicyUrl as string) ?? "",
     featureGraphic: (raw?.featureGraphic as string) ?? "",
     apkFile: (raw?.apkFile as string) ?? "",
@@ -133,9 +127,6 @@ function formValuesToCreate(values: AppFormValues): CreateAppInput {
     platform: values.platform,
     categoryId: values.categoryId,
     downloadS3Key: values.downloadS3Key.trim(),
-    version: values.version.trim() || undefined,
-    versionCode: values.versionCode ? Number(values.versionCode) : undefined,
-    packageName: values.packageName.trim() || undefined,
     privacyPolicyUrl: values.privacyPolicyUrl.trim() || undefined,
     featureGraphic: values.featureGraphic.trim() || undefined,
     apkFile: values.apkFile.trim() || undefined,
@@ -167,9 +158,6 @@ function formValuesToUpdate(values: AppFormValues): UpdateAppInput {
     platform: values.platform,
     categoryId: values.categoryId || undefined,
     downloadS3Key: values.downloadS3Key.trim() || undefined,
-    version: values.version.trim() || undefined,
-    versionCode: values.versionCode ? Number(values.versionCode) : undefined,
-    packageName: values.packageName.trim() || undefined,
     privacyPolicyUrl: values.privacyPolicyUrl.trim() || undefined,
     featureGraphic: values.featureGraphic.trim() || undefined,
     apkFile: values.apkFile.trim() || undefined,
@@ -596,15 +584,6 @@ export function AppForm({
               </div>
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1">
                 <div className="space-y-2">
-                  <Label htmlFor="packageName">Package name (optional)</Label>
-                  <Input
-                    id="packageName"
-                    value={values.packageName}
-                    onChange={(e) => update("packageName", e.target.value)}
-                    placeholder="com.example.app"
-                  />
-                </div>
-                <div className="space-y-2">
                   <Label htmlFor="privacyPolicyUrl">Privacy policy URL</Label>
                   <Input
                     id="privacyPolicyUrl"
@@ -612,28 +591,6 @@ export function AppForm({
                     value={values.privacyPolicyUrl}
                     onChange={(e) => update("privacyPolicyUrl", e.target.value)}
                     placeholder="https://example.com/privacy"
-                  />
-                </div>
-              </div>
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1">
-                <div className="space-y-2">
-                  <Label htmlFor="version">Version (optional)</Label>
-                  <Input
-                    id="version"
-                    value={values.version}
-                    onChange={(e) => update("version", e.target.value)}
-                    placeholder="1.0.0"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="versionCode">Version code (optional)</Label>
-                  <Input
-                    id="versionCode"
-                    type="number"
-                    min={1}
-                    value={values.versionCode}
-                    onChange={(e) => update("versionCode", e.target.value)}
-                    placeholder="1"
                   />
                 </div>
               </div>

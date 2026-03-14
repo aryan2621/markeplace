@@ -16,6 +16,8 @@ export type ValidateDownloadUrlResult =
 
 export type ExtractionResult = {
   packageName?: string | null;
+  versionName?: string | null;
+  versionCode?: number | string | null;
   permissions?: { name: string; protectionLevel?: string }[];
 };
 

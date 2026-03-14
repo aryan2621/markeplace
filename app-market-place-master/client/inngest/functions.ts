@@ -110,11 +110,16 @@ export const appSubmitted = inngest.createFunction(
     let packageName: string | null = null;
     let permissions: { name: string; protectionLevel: string }[] = [];
 
+    let version: string | null = null;
+    let versionCode: number | string | null = null;
+
     if (EXTRACTION_SERVICE_URL) {
       const extraction = await step.run("call-extraction-service", () =>
         callExtractionServiceStep(slug, downloadS3Key!, stepLogger)
       );
       packageName = extraction.packageName ?? null;
+      version = extraction.versionName ?? null;
+      versionCode = extraction.versionCode ?? null;
       permissions = (extraction.permissions ?? []).map((p) => ({
         name: p.name,
         protectionLevel: p.protectionLevel ?? "unknown",
@@ -130,6 +135,8 @@ export const appSubmitted = inngest.createFunction(
         appRef,
         permissions,
         packageName,
+        version,
+        versionCode,
         logger: stepLogger,
       })
     );
