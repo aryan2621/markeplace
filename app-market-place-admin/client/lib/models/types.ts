@@ -24,7 +24,7 @@ export type App = {
   rating?: number | null;
   size?: string | null;
   category?: Category | null;
-  downloadUrl?: string | null;
+  downloadS3Key?: string | null;
   version?: string | null;
   versionCode?: number | null;
   status?: AppStatus;
@@ -122,7 +122,7 @@ export type CreateAppInput = {
   rating?: number | null;
   size?: string | null;
   featuredOrder?: number | null;
-  downloadUrl: string;
+  downloadS3Key: string;
   version?: string | null;
   versionCode?: number | null;
   packageName?: string | null;
@@ -156,7 +156,7 @@ export type UpdateAppInput = {
   rating?: number | null;
   size?: string | null;
   featuredOrder?: number | null;
-  downloadUrl?: string | null;
+  downloadS3Key?: string | null;
   version?: string | null;
   versionCode?: number | null;
   packageName?: string | null;

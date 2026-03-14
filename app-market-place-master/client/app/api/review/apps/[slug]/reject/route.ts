@@ -6,6 +6,7 @@ import { sendAppRejectedEmail } from "@/lib/email";
 import { checkMasterRateLimit } from "@/lib/rate-limit";
 import { requireMasterUser } from "@/lib/master-allowlist";
 import { COLLECTIONS } from "@/lib/firestore-collections";
+import { validateSlug, REJECT_FEEDBACK_MAX_LENGTH } from "@/lib/validation";
 import { logRequest, logStep, logResponse, logError } from "@/lib/api-logger";
 
 export async function POST(
@@ -31,9 +32,21 @@ export async function POST(
     logStep(route, "rate_limited", { status: 429 });
     return rateLimitRes;
   }
+  const slugValidation = validateSlug(slug ?? "");
+  if (!slugValidation.ok) {
+    logStep(route, "validation_failed", { reason: slugValidation.error, slug });
+    return NextResponse.json({ error: slugValidation.error }, { status: 400 });
+  }
   try {
     const body = await req.json().catch(() => ({}));
     const reason = typeof body.reason === "string" ? body.reason.trim() : "Rejected by reviewer.";
+    if (reason.length > REJECT_FEEDBACK_MAX_LENGTH) {
+      logStep(route, "validation_failed", { reason: "reason_too_long" });
+      return NextResponse.json(
+        { error: `reason must be at most ${REJECT_FEEDBACK_MAX_LENGTH} characters` },
+        { status: 400 }
+      );
+    }
     const addStrike = body.addStrike === true;
     const db = getDb();
     const ref = db.collection(COLLECTIONS.apps).doc(slug);

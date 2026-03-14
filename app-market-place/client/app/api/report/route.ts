@@ -15,7 +15,13 @@ export async function POST(req: NextRequest) {
     return rateLimitRes;
   }
   try {
-    const body = await req.json();
+    let body: unknown;
+    try {
+      body = await req.json();
+    } catch {
+      logStep(route, "validation_failed", { reason: "invalid_body" });
+      return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
+    }
     const validated = validateReportBody(body);
     if (!validated.ok) {
       logStep(route, "validation_failed", { reason: validated.error });
@@ -28,6 +34,7 @@ export async function POST(req: NextRequest) {
       reporterEmail: validated.reporterEmail,
       reason: validated.reason,
       status: "pending",
+      createdAt: Date.now(),
     });
     logStep(route, "report_saved", { appSlug: validated.appSlug });
     logResponse(route, 200, Date.now() - start, {});

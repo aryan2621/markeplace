@@ -25,7 +25,7 @@ function docToApp(doc: DocumentSnapshot) {
     categoryId: d.categoryId,
     rating: d.rating ?? null,
     size: d.size ?? null,
-    downloadUrl: d.downloadUrl ?? null,
+    downloadS3Key: d.downloadS3Key ?? null,
     version: d.version ?? null,
     versionCode: d.versionCode ?? null,
     status: d.status,
@@ -119,11 +119,18 @@ export async function PATCH(
       logStep(route, "validation_failed", { reason: slugValidation.error, slug });
       return NextResponse.json({ error: slugValidation.error }, { status: 400 });
     }
-    const body = await req.json();
+    let body: Record<string, unknown>;
+    try {
+      body = (await req.json()) as Record<string, unknown>;
+    } catch {
+      logStep(route, "validation_failed", { reason: "invalid_body" });
+      return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
+    }
     const db = getDb();
 
-    if (body.packageName?.trim()) {
-      const existingPkg = await db.collection(COLLECTIONS.apps).where("packageName", "==", body.packageName.trim()).limit(1).get();
+    const packageNameTrimmed = typeof body.packageName === "string" ? body.packageName.trim() : "";
+    if (packageNameTrimmed) {
+      const existingPkg = await db.collection(COLLECTIONS.apps).where("packageName", "==", packageNameTrimmed).limit(1).get();
       if (!existingPkg.empty && existingPkg.docs[0].id !== slug) {
         logStep(route, "validation_failed", { reason: "package_name_exists", slug });
         return NextResponse.json({ error: "App with this package name already exists" }, { status: 400 });
@@ -154,7 +161,7 @@ export async function PATCH(
     if (body.rating !== undefined) patch.rating = body.rating;
     if (body.size !== undefined) patch.size = body.size;
     if (body.featuredOrder !== undefined) patch.featuredOrder = body.featuredOrder;
-    if (body.downloadUrl !== undefined) patch.downloadUrl = body.downloadUrl;
+    if (body.downloadS3Key !== undefined) patch.downloadS3Key = body.downloadS3Key;
     if (body.version !== undefined) patch.version = body.version;
     if (body.versionCode !== undefined) patch.versionCode = body.versionCode;
     if (body.status !== undefined) {

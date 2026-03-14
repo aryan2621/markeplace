@@ -32,6 +32,8 @@ export const checkReportThresholds = inngest.createFunction(
     const countBySlug: Record<string, number> = {};
     reportsSnap.docs.forEach((d) => {
       const data = d.data();
+      const status = data.status as string | undefined;
+      if (status && status !== "pending") return;
       const slug = (data.appSlug || data.appId) as string;
       if (slug) countBySlug[slug] = (countBySlug[slug] || 0) + 1;
     });
@@ -83,11 +85,11 @@ export const appSubmitted = inngest.createFunction(
     if (appSnap.skip) return { skipped: true, status: appSnap.status };
 
     const app = appSnap.app;
-    const downloadUrl = app.downloadUrl as string | undefined;
+    const downloadS3Key = (app.downloadS3Key as string)?.trim();
     const developerEmail = (app.developerEmail as string) || "";
 
     const validation = await step.run("validate-download-url", () =>
-      validateDownloadUrlStep(slug, downloadUrl, stepLogger)
+      validateDownloadUrlStep(slug, downloadS3Key, stepLogger)
     );
 
     if (!validation.valid) {
@@ -98,7 +100,7 @@ export const appSubmitted = inngest.createFunction(
           appRef,
           app,
           developerEmail,
-          reason: validation.reason ?? "Missing download URL (APK).",
+          reason: validation.reason ?? "Missing APK storage key.",
           logger: stepLogger,
         })
       );
@@ -110,7 +112,7 @@ export const appSubmitted = inngest.createFunction(
 
     if (EXTRACTION_SERVICE_URL) {
       const extraction = await step.run("call-extraction-service", () =>
-        callExtractionServiceStep(slug, downloadUrl!, stepLogger)
+        callExtractionServiceStep(slug, downloadS3Key!, stepLogger)
       );
       packageName = extraction.packageName ?? null;
       permissions = (extraction.permissions ?? []).map((p) => ({

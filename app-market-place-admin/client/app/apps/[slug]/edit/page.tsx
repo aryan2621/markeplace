@@ -30,7 +30,6 @@ export default function EditAppPage() {
   const [developerVerified, setDeveloperVerified] = useState<boolean | null>(null);
   const [hasChanges, setHasChanges] = useState(false);
 
-
   useEffect(() => {
     if (!slug) {
       setApp(null);
@@ -77,7 +76,7 @@ export default function EditAppPage() {
       rating: input.rating ?? undefined,
       size: input.size ?? undefined,
       featuredOrder: (input as UpdateAppInput & { featuredOrder?: number }).featuredOrder ?? undefined,
-      downloadUrl: input.downloadUrl ?? undefined,
+      downloadS3Key: input.downloadS3Key ?? undefined,
       version: input.version ?? undefined,
       versionCode: input.versionCode ?? undefined,
       packageName: input.packageName ?? undefined,
@@ -109,13 +108,15 @@ export default function EditAppPage() {
       return;
     }
     const status = app.status ?? "draft";
-    if (status !== "draft" && status !== "rejected") {
-      toast.error("Only draft or rejected apps can be submitted for review.");
+    const canSubmit =
+      status === "draft" || status === "rejected" || status === "published";
+    if (!canSubmit) {
+      toast.error("Only draft, rejected, or published (version update) apps can be submitted for review.");
       return;
     }
     setSubmitting(true);
     try {
-      await submitForReview(slug);
+      await submitForReview(slug, crypto.randomUUID());
       toast.success("App submitted for review.");
       setApp((prev) =>
         prev ? { ...prev, status: "pending_review", submittedAt: String(Date.now()) } : null
@@ -155,7 +156,7 @@ export default function EditAppPage() {
         ) : (
           <div className="space-y-6">
             <div className="flex flex-wrap items-center gap-2">
-              {(app.status === "draft" || app.status === "rejected") && !hasChanges && (
+              {(app.status === "draft" || app.status === "rejected" || app.status === "published") && !hasChanges && (
                 <>
                   <Button
                     type="button"
@@ -167,6 +168,8 @@ export default function EditAppPage() {
                         <Spinner size={16} className="mr-2" />
                         Submitting…
                       </>
+                    ) : app.status === "published" ? (
+                      "Submit new version for review"
                     ) : (
                       "Submit for review"
                     )}
@@ -222,7 +225,9 @@ export default function EditAppPage() {
                 </span>
               )}
               {app.status === "published" && (
-                <span className="text-muted-foreground text-sm">Published — visible on AndroHub.</span>
+                <span className="text-muted-foreground text-sm">
+                  Published — visible on AndroHub. Bump version/versionCode to submit a new version for review.
+                </span>
               )}
             </div>
             <AppForm
@@ -243,7 +248,7 @@ export default function EditAppPage() {
                 rating: app.rating ?? undefined,
                 size: app.size ?? undefined,
                 featuredOrder: (app as App & { featuredOrder?: number }).featuredOrder ?? undefined,
-                downloadUrl: app.downloadUrl ?? undefined,
+                downloadS3Key: app.downloadS3Key ?? undefined,
                 version: app.version ?? undefined,
                 versionCode: app.versionCode ?? undefined,
                 packageName: app.packageName ?? undefined,

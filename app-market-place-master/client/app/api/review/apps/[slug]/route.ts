@@ -5,6 +5,7 @@ import { getDb } from "@/lib/firebase-admin";
 import { checkMasterRateLimit } from "@/lib/rate-limit";
 import { requireMasterUser } from "@/lib/master-allowlist";
 import { COLLECTIONS } from "@/lib/firestore-collections";
+import { validateSlug } from "@/lib/validation";
 import { logRequest, logStep, logResponse, logError } from "@/lib/api-logger";
 
 function docToApp(doc: DocumentSnapshot) {
@@ -24,7 +25,6 @@ function docToApp(doc: DocumentSnapshot) {
     categoryId: d.categoryId,
     rating: d.rating ?? null,
     size: d.size ?? null,
-    downloadUrl: d.downloadUrl ?? null,
     version: d.version ?? null,
     versionCode: d.versionCode ?? null,
     status: d.status,
@@ -63,6 +63,11 @@ export async function GET(
   if (rateLimitRes) {
     logStep(route, "rate_limited", { status: 429 });
     return rateLimitRes;
+  }
+  const slugValidation = validateSlug(slug ?? "");
+  if (!slugValidation.ok) {
+    logStep(route, "validation_failed", { reason: slugValidation.error, slug });
+    return NextResponse.json({ error: slugValidation.error }, { status: 400 });
   }
   try {
     const db = getDb();

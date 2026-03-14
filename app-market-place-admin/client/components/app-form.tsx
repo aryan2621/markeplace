@@ -16,10 +16,32 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { toast } from "sonner";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Separator } from "@/components/ui/separator";
+import { RefreshCw } from "lucide-react";
 import { PLATFORM_VALUES, Platform } from "@/lib/constants";
 import { uploadFile } from "@/lib/api/admin-client";
 import type { Category, CreateAppInput, UpdateAppInput } from "@/lib/models";
 import { Spinner } from "@/components/ui/spinner";
+
+const SLUG_MAX_LENGTH = 100;
+
+function nameToSlug(name: string): string {
+  const s = name
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9_-]+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "");
+  return s.slice(0, SLUG_MAX_LENGTH);
+}
+
+function randomSlugSuffix(length = 5): string {
+  const chars = "abcdefghijklmnopqrstuvwxyz0123456789";
+  let result = "";
+  for (let i = 0; i < length; i++) {
+    result += chars[Math.floor(Math.random() * chars.length)];
+  }
+  return result;
+}
 
 type AppFormValues = {
   name: string;
@@ -37,7 +59,7 @@ type AppFormValues = {
   rating: string;
   size: string;
   featuredOrder: string;
-  downloadUrl: string;
+  downloadS3Key: string;
   version: string;
   versionCode: string;
   packageName: string;
@@ -76,7 +98,7 @@ function toFormValues(input: Partial<CreateAppInput> | null): AppFormValues {
     rating: input?.rating != null ? String(input.rating) : "",
     size: input?.size ?? "",
     featuredOrder: input?.featuredOrder != null ? String(input.featuredOrder) : "",
-    downloadUrl: input?.downloadUrl ?? "",
+    downloadS3Key: input?.downloadS3Key ?? "",
     version: input?.version ?? "",
     versionCode: input?.versionCode != null ? String(input.versionCode) : "",
     packageName: (raw?.packageName as string) ?? "",
@@ -110,7 +132,7 @@ function formValuesToCreate(values: AppFormValues): CreateAppInput {
     downloadCount: "0",
     platform: values.platform,
     categoryId: values.categoryId,
-    downloadUrl: values.downloadUrl.trim(),
+    downloadS3Key: values.downloadS3Key.trim(),
     version: values.version.trim() || undefined,
     versionCode: values.versionCode ? Number(values.versionCode) : undefined,
     packageName: values.packageName.trim() || undefined,
@@ -144,7 +166,7 @@ function formValuesToUpdate(values: AppFormValues): UpdateAppInput {
     videoUrl: values.videoUrl.trim() || undefined,
     platform: values.platform,
     categoryId: values.categoryId || undefined,
-    downloadUrl: values.downloadUrl.trim() || undefined,
+    downloadS3Key: values.downloadS3Key.trim() || undefined,
     version: values.version.trim() || undefined,
     versionCode: values.versionCode ? Number(values.versionCode) : undefined,
     packageName: values.packageName.trim() || undefined,
@@ -263,7 +285,7 @@ export function AppForm({
     setUploading(true);
     try {
       const { url } = await uploadFile(file);
-      update("downloadUrl", url);
+      update("downloadS3Key", url);
     } catch (err) {
       const message = err instanceof Error ? err.message : "Upload failed";
       setError(message);
@@ -275,7 +297,21 @@ export function AppForm({
   }
 
   function update<K extends keyof AppFormValues>(key: K, value: AppFormValues[K]) {
-    setValues((prev) => ({ ...prev, [key]: value }));
+    setValues((prev) => {
+      const next = { ...prev, [key]: value };
+      if (mode === "create" && key === "name") {
+        next.slug = nameToSlug(String(value));
+      }
+      return next;
+    });
+  }
+
+  function handleSlugRefresh() {
+    if (mode !== "create") return;
+    const base = nameToSlug(values.name);
+    const suffix = randomSlugSuffix(5);
+    const slug = (base ? `${base}-${suffix}` : suffix).slice(0, SLUG_MAX_LENGTH);
+    setValues((prev) => ({ ...prev, slug }));
   }
 
   function handleScreenshotsChange(raw: string) {
@@ -320,7 +356,7 @@ export function AppForm({
     submitAttempted && typeof values[key] === "string" && !String(values[key]).trim();
   const invalidDesc = submitAttempted && !values.description.trim();
   const invalidIcon = submitAttempted && !values.icon.trim();
-  const invalidDownloadUrl = submitAttempted && !values.downloadUrl.trim();
+  const invalidDownloadS3Key = submitAttempted && !values.downloadS3Key.trim();
   const invalidCategory = submitAttempted && !values.categoryId;
   const iconUrlValid =
     values.icon.trim().startsWith("http://") || values.icon.trim().startsWith("https://");
@@ -332,7 +368,7 @@ export function AppForm({
       Boolean(values.shortDescription.trim()) &&
       Boolean(values.description.trim()) &&
       Boolean(values.icon.trim()) &&
-      Boolean(values.downloadUrl.trim()) &&
+      Boolean(values.downloadS3Key.trim()) &&
       Boolean(values.categoryId) &&
       Boolean(values.developer.trim()) &&
       Boolean(values.developerEmail.trim()));
@@ -388,14 +424,31 @@ export function AppForm({
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="slug">Slug</Label>
-                  <Input
-                    id="slug"
-                    value={values.slug}
-                    onChange={(e) => update("slug", e.target.value)}
-                    readOnly={slugReadOnly}
-                    required
-                    aria-invalid={invalid("slug")}
-                  />
+                  <div className="flex gap-2">
+                    <Input
+                      id="slug"
+                      value={values.slug}
+                      onChange={(e) => update("slug", e.target.value)}
+                      readOnly={mode === "create" || slugReadOnly}
+                      required
+                      placeholder={mode === "create" ? "Generated from name" : undefined}
+                      aria-invalid={invalid("slug")}
+                      className="flex-1"
+                    />
+                    {mode === "create" && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="icon"
+                        onClick={handleSlugRefresh}
+                        disabled={!values.name.trim()}
+                        title="Generate another slug"
+                        aria-label="Generate another slug"
+                      >
+                        <RefreshCw className="h-4 w-4" />
+                      </Button>
+                    )}
+                  </div>
                 </div>
               </div>
               <div className="space-y-2">
@@ -508,17 +561,16 @@ export function AppForm({
             <div className="space-y-4">
               <p className="text-sm font-medium text-muted-foreground pt-0">Distribution</p>
               <div className="space-y-2">
-                <Label htmlFor="downloadUrl">Download URL</Label>
+                <Label htmlFor="downloadS3Key">APK storage key</Label>
                 <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
                   <Input
-                    id="downloadUrl"
-                    type="url"
-                    value={values.downloadUrl}
-                    onChange={(e) => update("downloadUrl", e.target.value)}
+                    id="downloadS3Key"
+                    value={values.downloadS3Key}
+                    onChange={(e) => update("downloadS3Key", e.target.value)}
                     required
-                    placeholder="https://example.com/app.apk"
+                    placeholder="uploads/... (set by upload)"
                     className="flex-1 min-w-0"
-                    aria-invalid={invalidDownloadUrl}
+                    aria-invalid={invalidDownloadS3Key}
                   />
                   <input
                     ref={downloadInputRef}
@@ -540,7 +592,7 @@ export function AppForm({
                     {uploading ? <><Spinner size={16} className="mr-2" /> Uploading…</> : "Upload APK"}
                   </Button>
                 </div>
-                <p className="text-muted-foreground text-xs">Paste a URL or upload an APK/AAB file</p>
+                <p className="text-muted-foreground text-xs">Upload an APK/AAB file to set the storage key</p>
               </div>
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1">
                 <div className="space-y-2">

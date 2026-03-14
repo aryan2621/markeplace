@@ -4,6 +4,7 @@ import { getDb } from "@/lib/firebase-admin";
 import { checkMasterRateLimit } from "@/lib/rate-limit";
 import { requireMasterUser } from "@/lib/master-allowlist";
 import { COLLECTIONS } from "@/lib/firestore-collections";
+import { validateSlug, REJECT_FEEDBACK_MAX_LENGTH } from "@/lib/validation";
 import { writeAuditLog } from "@/lib/audit-log";
 import { logRequest, logStep, logResponse, logError } from "@/lib/api-logger";
 
@@ -30,9 +31,21 @@ export async function POST(
     logStep(route, "rate_limited", { status: 429 });
     return rateLimitRes;
   }
+  const slugValidation = validateSlug(slug ?? "");
+  if (!slugValidation.ok) {
+    logStep(route, "validation_failed", { reason: slugValidation.error, slug });
+    return NextResponse.json({ error: slugValidation.error }, { status: 400 });
+  }
   try {
     const body = await req.json().catch(() => ({}));
     const feedback = typeof body.feedback === "string" ? body.feedback.trim() : "Please make the requested changes and resubmit.";
+    if (feedback.length > REJECT_FEEDBACK_MAX_LENGTH) {
+      logStep(route, "validation_failed", { reason: "feedback_too_long" });
+      return NextResponse.json(
+        { error: `feedback must be at most ${REJECT_FEEDBACK_MAX_LENGTH} characters` },
+        { status: 400 }
+      );
+    }
     const db = getDb();
     const ref = db.collection(COLLECTIONS.apps).doc(slug);
     const snap = await ref.get();

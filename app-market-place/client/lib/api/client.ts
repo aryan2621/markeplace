@@ -13,15 +13,21 @@ export async function getCategories(): Promise<Category[]> {
   return fetchJson<Category[]>("/api/categories");
 }
 
+export type AppsResponse = { apps: App[]; nextCursor: string | null };
+
 export async function getApps(params?: {
   categoryId?: string;
   search?: string;
-}): Promise<App[]> {
+  limit?: number;
+  cursor?: string;
+}): Promise<AppsResponse> {
   const searchParams = new URLSearchParams();
   if (params?.categoryId) searchParams.set("categoryId", params.categoryId);
   if (params?.search) searchParams.set("search", params.search);
+  if (params?.limit != null) searchParams.set("limit", String(params.limit));
+  if (params?.cursor) searchParams.set("cursor", params.cursor);
   const q = searchParams.toString();
-  return fetchJson<App[]>(`/api/apps${q ? `?${q}` : ""}`);
+  return fetchJson<AppsResponse>(`/api/apps${q ? `?${q}` : ""}`);
 }
 
 export async function getFeaturedApps(): Promise<App[]> {

@@ -91,7 +91,6 @@ export default function AppDetailPage() {
     );
   }
 
-  const downloadUrl = app.downloadUrl?.trim() || null;
   const category = app.category ?? null;
   const moreFromDeveloper = app.moreFromDeveloper ?? [];
   const downloadGatewayPath = `/api/apps/${slug}/download`;
@@ -168,23 +167,19 @@ export default function AppDetailPage() {
                   )}
                 </div>
                 <div className="flex flex-wrap gap-3 pt-2">
-                  {downloadUrl ? (
-                    <Button
-                      onClick={() => {
-                        window.open(downloadGatewayPath, "_blank", "noopener,noreferrer");
-                        const next = String(
-                          (parseInt(app.downloadCount || "0", 10) || 0) + 1
-                        );
-                        setApp((prev) =>
-                          prev ? { ...prev, downloadCount: next } : prev
-                        );
-                      }}
-                    >
-                      Download
-                    </Button>
-                  ) : (
-                    <span className="text-sm text-muted-foreground">Download not available</span>
-                  )}
+                  <Button
+                    onClick={() => {
+                      window.open(downloadGatewayPath, "_blank", "noopener,noreferrer");
+                      const next = String(
+                        (parseInt(app.downloadCount || "0", 10) || 0) + 1
+                      );
+                      setApp((prev) =>
+                        prev ? { ...prev, downloadCount: next } : prev
+                      );
+                    }}
+                  >
+                    Download
+                  </Button>
                   <ShareButton title={app.name} />
                   <ReportAppButton appId={app.id} slug={slug} />
                 </div>
@@ -252,17 +247,15 @@ export default function AppDetailPage() {
           </div>
 
           <aside className="lg:sticky lg:top-8 lg:self-start">
-            {downloadUrl && (
-              <Card className="border-border">
-                <CardContent className="pt-6">
-                  <p className="mb-3 text-sm font-medium">Scan to download</p>
-                  <AppQRCode value={downloadGatewayUrl ?? downloadGatewayPath} size={180} />
-                  <p className="mt-3 text-xs text-muted-foreground">
-                    Point your phone camera at the QR code to get the app.
-                  </p>
-                </CardContent>
-              </Card>
-            )}
+            <Card className="border-border">
+              <CardContent className="pt-6">
+                <p className="mb-3 text-sm font-medium">Scan to download</p>
+                <AppQRCode value={downloadGatewayUrl ?? downloadGatewayPath} size={180} />
+                <p className="mt-3 text-xs text-muted-foreground">
+                  Point your phone camera at the QR code to get the app.
+                </p>
+              </CardContent>
+            </Card>
           </aside>
         </div>
       </main>

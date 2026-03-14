@@ -19,22 +19,23 @@ export function AuthSettingsDialog({ developerVerified, className, isMobile }: A
       <DialogTrigger asChild>
         {isMobile ? (
           <button
+            type="button"
+            aria-label="Authentication settings"
             className={cn(
-              "flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors hover:bg-muted hover:text-foreground",
+              "flex w-full items-center justify-center rounded-md px-3 py-2 text-sm font-medium transition-colors hover:bg-muted hover:text-foreground",
               className
             )}
           >
             <Settings className="size-4" />
-            Authentication Settings
           </button>
         ) : (
           <Button
             variant="outline"
-            size="sm"
-            className={cn("gap-1.5", className)}
+            size="icon"
+            className={cn(className)}
+            aria-label="Authentication settings"
           >
             <Settings className="size-4" />
-            Settings
           </Button>
         )}
       </DialogTrigger>

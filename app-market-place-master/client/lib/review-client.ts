@@ -27,7 +27,6 @@ export async function getReviewApps(status?: string): Promise<ReviewApp[]> {
 export type ReviewAppDetail = {
   app: ReviewApp & {
     privacyPolicyUrl?: string | null;
-    downloadUrl?: string | null;
     verificationResult?: string | null;
     rejectionReason?: string | null;
     lastVerifiedAt?: string | null;
@@ -61,5 +60,51 @@ export async function requestChanges(slug: string, feedback: string): Promise<{ 
     credentials: "include",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ feedback }),
+  });
+}
+
+export type Report = {
+  id: string;
+  appId: string;
+  appSlug: string;
+  reporterEmail: string | null;
+  reason: string | null;
+  status: string;
+  createdAt: number | null;
+  resolvedAt: number | null;
+  resolvedBy: string | null;
+  resolutionNote: string | null;
+};
+
+export async function getReports(params?: {
+  status?: string;
+  appSlug?: string;
+  limit?: number;
+  cursor?: string;
+}): Promise<{ reports: Report[]; nextCursor: string | null }> {
+  const searchParams = new URLSearchParams();
+  if (params?.status) searchParams.set("status", params.status);
+  if (params?.appSlug) searchParams.set("appSlug", params.appSlug);
+  if (params?.limit != null) searchParams.set("limit", String(params.limit));
+  if (params?.cursor) searchParams.set("cursor", params.cursor);
+  const q = searchParams.toString();
+  return fetchJson<{ reports: Report[]; nextCursor: string | null }>(
+    `/api/review/reports${q ? `?${q}` : ""}`
+  );
+}
+
+export async function getReport(id: string): Promise<Report> {
+  return fetchJson<Report>(`/api/review/reports/${encodeURIComponent(id)}`);
+}
+
+export async function resolveReport(
+  id: string,
+  params: { action: "resolved" | "dismissed"; note?: string }
+): Promise<{ ok: boolean; status: string; resolvedAt: number }> {
+  return fetchJson(`/api/review/reports/${encodeURIComponent(id)}/resolve`, {
+    method: "POST",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ action: params.action, note: params.note }),
   });
 }

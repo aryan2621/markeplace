@@ -12,6 +12,7 @@ import { ThemeToggle } from "@/components/theme-toggle";
 const navMain = [
   { href: "/", label: "Home" },
   { href: "/review", label: "Review queue" },
+  { href: "/review/reports", label: "Reports" },
 ] as const;
 
 function NavLink({
@@ -86,7 +87,10 @@ export function MasterLayout({ children }: { children: React.ReactNode }) {
                 href={href}
                 active={
                   pathname === href ||
-                  (href === "/review" && pathname.startsWith("/review"))
+                  (href === "/review" &&
+                    (pathname === "/review" ||
+                      (pathname.startsWith("/review/") && !pathname.startsWith("/review/reports")))) ||
+                  (href === "/review/reports" && pathname.startsWith("/review/reports"))
                 }
               >
                 {label}
@@ -121,7 +125,10 @@ export function MasterLayout({ children }: { children: React.ReactNode }) {
                   href={href}
                   active={
                     pathname === href ||
-                    (href === "/review" && pathname.startsWith("/review"))
+                    (href === "/review" &&
+                      (pathname === "/review" ||
+                        (pathname.startsWith("/review/") && !pathname.startsWith("/review/reports")))) ||
+                    (href === "/review/reports" && pathname.startsWith("/review/reports"))
                   }
                 >
                   {label}

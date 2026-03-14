@@ -21,7 +21,6 @@ export interface App {
   categoryId: string;
   rating?: number | null;
   size?: string | null;
-  downloadUrl?: string | null;
   version?: string | null;
   versionCode?: number | null;
 }

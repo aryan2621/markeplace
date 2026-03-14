@@ -24,7 +24,7 @@ function docToApp(doc: DocumentSnapshot) {
     categoryId: d.categoryId,
     rating: d.rating ?? null,
     size: d.size ?? null,
-    downloadUrl: d.downloadUrl ?? null,
+    downloadS3Key: d.downloadS3Key ?? null,
     version: d.version ?? null,
     versionCode: d.versionCode ?? null,
     status: d.status,
@@ -109,7 +109,13 @@ export async function POST(req: NextRequest) {
     return rateLimitRes;
   }
   try {
-    const body = await req.json();
+    let body: Record<string, unknown>;
+    try {
+      body = (await req.json()) as Record<string, unknown>;
+    } catch {
+      logStep(route, "validation_failed", { reason: "invalid_body" });
+      return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
+    }
     const slugRaw = typeof body.slug === "string" ? body.slug.trim() : "";
     const slugValidation = validateSlug(slugRaw);
     if (!slugValidation.ok) {
@@ -124,8 +130,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "App with this slug already exists" }, { status: 400 });
     }
 
-    if (body.packageName?.trim()) {
-      const existingPkg = await db.collection(COLLECTIONS.apps).where("packageName", "==", body.packageName.trim()).limit(1).get();
+    const packageNameTrimmed = typeof body.packageName === "string" ? body.packageName.trim() : "";
+    if (packageNameTrimmed) {
+      const existingPkg = await db.collection(COLLECTIONS.apps).where("packageName", "==", packageNameTrimmed).limit(1).get();
       if (!existingPkg.empty) {
         logStep(route, "validation_failed", { reason: "package_name_exists" });
         return NextResponse.json({ error: "App with this package name already exists" }, { status: 400 });
@@ -148,7 +155,7 @@ export async function POST(req: NextRequest) {
       rating: body.rating,
       size: body.size,
       featuredOrder: body.featuredOrder,
-      downloadUrl: body.downloadUrl,
+      downloadS3Key: body.downloadS3Key,
       version: body.version,
       versionCode: body.versionCode,
       status: "draft",

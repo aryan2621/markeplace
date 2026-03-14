@@ -51,10 +51,10 @@ export function MarketplaceContent() {
       setError(null);
     });
     Promise.all([getCategories(), getApps(), getFeaturedApps()])
-      .then(([categoriesList, appsList, featuredList]) => {
+      .then(([categoriesList, appsResponse, featuredList]) => {
         if (cancelled) return;
         setCategories(categoriesList);
-        setApps(appsList);
+        setApps(appsResponse.apps);
         setFeaturedApps(featuredList);
       })
       .catch((err) => {

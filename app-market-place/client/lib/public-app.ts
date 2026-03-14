@@ -18,7 +18,6 @@ export type PublicApp = {
   categoryId: string;
   rating: number | null;
   size: string | null;
-  downloadUrl: string | null;
   version: string | null;
   versionCode: number | null;
   publishedAt: string | null;
@@ -41,7 +40,6 @@ export function docToPublicApp(doc: DocumentSnapshot): PublicApp {
     categoryId: d.categoryId,
     rating: d.rating ?? null,
     size: d.size ?? null,
-    downloadUrl: d.downloadUrl ?? null,
     version: d.version ?? null,
     versionCode: d.versionCode ?? null,
     publishedAt: d.publishedAt != null ? String(d.publishedAt) : null,

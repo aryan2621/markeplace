@@ -67,10 +67,18 @@ export async function updateApp(slug: string, input: UpdateAppInput): Promise<Ap
   });
 }
 
-export async function submitForReview(slug: string): Promise<{ ok: boolean; message: string; submittedAt: number }> {
+export async function submitForReview(
+  slug: string,
+  idempotencyKey?: string
+): Promise<{ ok: boolean; message: string; submittedAt: number }> {
+  const key = idempotencyKey ?? crypto.randomUUID();
   return fetchJson<{ ok: boolean; message: string; submittedAt: number }>(
     `/api/admin/apps/${encodeURIComponent(slug)}/submit`,
-    { method: "POST", credentials: "include" }
+    {
+      method: "POST",
+      credentials: "include",
+      headers: { "Idempotency-Key": key },
+    }
   );
 }
 
@@ -98,7 +106,8 @@ export async function uploadFile(file: File): Promise<{ url: string; key: string
   if (!putRes.ok) {
     throw new Error(`Upload failed: ${putRes.status} ${putRes.statusText}`);
   }
-  return { url: readUrl, key };
+  // Return storage path (key) so we store that instead of long-lived URL; marketplace generates short-lived signed URLs.
+  return { url: key, key };
 }
 
 export type { App, Category, CreateAppInput, UpdateAppInput };

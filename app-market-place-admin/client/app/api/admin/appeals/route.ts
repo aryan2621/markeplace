@@ -21,14 +21,22 @@ export async function POST(req: NextRequest) {
     return rateLimitRes;
   }
   try {
-    const body = await req.json();
+    let body: Record<string, unknown>;
+    try {
+      body = (await req.json()) as Record<string, unknown>;
+    } catch {
+      logStep(route, "validation_failed", { reason: "invalid_body" });
+      return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
+    }
     const appSlugRaw = typeof body.appSlug === "string" ? body.appSlug.trim() : "";
     const slugValidation = validateSlug(appSlugRaw);
     if (!slugValidation.ok) {
       logStep(route, "validation_failed", { reason: slugValidation.error });
       return NextResponse.json({ error: slugValidation.error }, { status: 400 });
     }
-    const reasonValidation = validateAppealReason(body.reason);
+    const reasonValidation = validateAppealReason(
+      typeof body.reason === "string" ? body.reason : undefined
+    );
     if (!reasonValidation.ok) {
       logStep(route, "validation_failed", { reason: reasonValidation.error });
       return NextResponse.json({ error: reasonValidation.error }, { status: 400 });

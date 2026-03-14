@@ -217,16 +217,22 @@ export default function ReviewDetailPage() {
                         Privacy policy
                       </a>
                     )}
-                    {data.app.downloadUrl && (
-                      <a
-                        href={data.app.downloadUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-sm font-medium text-primary underline underline-offset-4 hover:no-underline break-all"
-                      >
-                        Download APK
-                      </a>
-                    )}
+                    {(() => {
+                      const base = (process.env.NEXT_PUBLIC_MARKETPLACE_APP_BASE_URL ?? "").replace(/\/$/, "");
+                      const href = base ? `${base}/api/apps/${data.app.slug}/download` : null;
+                      return href ? (
+                        <a
+                          href={href}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-sm font-medium text-primary underline underline-offset-4 hover:no-underline break-all"
+                        >
+                          Download APK
+                        </a>
+                      ) : (
+                        <span className="text-sm text-muted-foreground">Download (set NEXT_PUBLIC_MARKETPLACE_APP_BASE_URL for link)</span>
+                      );
+                    })()}
                   </div>
                 </div>
               </CardContent>
@@ -246,22 +252,26 @@ export default function ReviewDetailPage() {
               </CardHeader>
               <CardContent className="space-y-4 min-w-0 overflow-hidden">
                 <ReviewStep
-                  icon={data.app.downloadUrl ? CheckCircle2 : XCircle}
-                  status={data.app.downloadUrl ? "pass" : "fail"}
-                  title="Download URL (APK)"
+                  icon={Package}
+                  status="info"
+                  title="APK download"
                   result={
-                    data.app.downloadUrl ? (
-                      <a
-                        href={data.app.downloadUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-primary underline underline-offset-2 text-sm"
-                      >
-                        Present — open link
-                      </a>
-                    ) : (
-                      <span className="text-destructive text-sm">Missing — submission invalid</span>
-                    )
+                    (() => {
+                      const base = (process.env.NEXT_PUBLIC_MARKETPLACE_APP_BASE_URL ?? "").replace(/\/$/, "");
+                      const href = base ? `${base}/api/apps/${data.app.slug}/download` : null;
+                      return href ? (
+                        <a
+                          href={href}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-primary underline underline-offset-2 text-sm"
+                        >
+                          Open download link
+                        </a>
+                      ) : (
+                        <span className="text-muted-foreground text-sm">Set NEXT_PUBLIC_MARKETPLACE_APP_BASE_URL for link</span>
+                      );
+                    })()
                   }
                 />
 

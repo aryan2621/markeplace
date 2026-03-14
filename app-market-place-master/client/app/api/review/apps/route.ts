@@ -24,7 +24,6 @@ function docToApp(doc: DocumentSnapshot) {
     categoryId: d.categoryId,
     rating: d.rating ?? null,
     size: d.size ?? null,
-    downloadUrl: d.downloadUrl ?? null,
     version: d.version ?? null,
     versionCode: d.versionCode ?? null,
     status: d.status,

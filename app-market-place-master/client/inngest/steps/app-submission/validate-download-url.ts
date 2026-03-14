@@ -2,13 +2,13 @@ import type { ValidateDownloadUrlResult, StepLogger } from "./types";
 
 export async function validateDownloadUrlStep(
   slug: string,
-  downloadUrl: string | undefined,
+  downloadS3Key: string | undefined,
   logger: StepLogger
 ): Promise<ValidateDownloadUrlResult> {
-  const hasUrl = Boolean(downloadUrl?.trim());
-  logger.info("Validating download URL", { slug, hasUrl });
-  if (!hasUrl) {
-    return { valid: false, reason: "Missing download URL (APK)." };
+  const hasKey = Boolean(downloadS3Key?.trim());
+  logger.info("Validating download S3 key", { slug, hasKey });
+  if (!hasKey) {
+    return { valid: false, reason: "Missing APK storage key (downloadS3Key)." };
   }
   return { valid: true };
 }

@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getDb } from "@/lib/firebase-admin";
 import { checkPublicRateLimit } from "@/lib/rate-limit";
-import { docToPublicApp } from "@/lib/public-app";
+import { fetchAppBySlug } from "@/lib/cached-apps";
 import { validateSlug } from "@/lib/validation";
 import { logRequest, logStep, logResponse, logError } from "@/lib/api-logger";
 
@@ -25,29 +24,13 @@ export async function GET(
     return NextResponse.json({ error: slugValidation.error }, { status: 400 });
   }
   try {
-    const db = getDb();
-    const appRef = db.collection("apps").doc(slug);
-    const appSnap = await appRef.get();
-    if (!appSnap.exists || appSnap.data()?.status !== "published") {
+    const result = await fetchAppBySlug(slug);
+    if (!result) {
       logStep(route, "not_found", { slug });
       return NextResponse.json({ error: "Not found" }, { status: 404 });
     }
-    const app = docToPublicApp(appSnap);
-    const doc = appSnap.data()!;
-    let category: { id: string; name: string; slug: string } | null = null;
-    if (doc.categoryId) {
-      const catSnap = await db.collection("categories").doc(doc.categoryId).get();
-      if (catSnap.exists) {
-        const c = catSnap.data()!;
-        category = { id: c.id, name: c.name, slug: c.slug };
-      }
-    }
-    const publishedSnap = await db.collection("apps").where("status", "==", "published").get();
-    const moreFromDeveloper = publishedSnap.docs
-      .filter((d) => d.data().developer === doc.developer && d.id !== slug)
-      .map(docToPublicApp);
     logResponse(route, 200, Date.now() - start, { slug });
-    return NextResponse.json({ ...app, category, moreFromDeveloper });
+    return NextResponse.json(result);
   } catch (e) {
     logError(route, e, { status: 500, durationMs: Date.now() - start });
     const message = e instanceof Error ? e.message : "Failed to load app";

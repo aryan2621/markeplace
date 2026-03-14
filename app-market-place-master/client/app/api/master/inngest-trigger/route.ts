@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { inngest } from "@/inngest/client";
 import { requireMasterUser } from "@/lib/master-allowlist";
+import { validateSlug } from "@/lib/validation";
 import { logRequest, logStep, logResponse, logError } from "@/lib/api-logger";
 
 export async function POST(req: Request) {
@@ -10,7 +11,9 @@ export async function POST(req: Request) {
 
   try {
     const authHeader = req.headers.get("x-admin-secret");
-    const isInternal = authHeader === process.env.ADMIN_INTERNAL_SECRET;
+    const secret = process.env.ADMIN_INTERNAL_SECRET;
+    const isInternal =
+      typeof secret === "string" && secret.length >= 16 && authHeader === secret;
 
     if (!isInternal) {
       const isMasterResp = await requireMasterUser();
@@ -20,13 +23,20 @@ export async function POST(req: Request) {
       }
     }
 
-    const { slug } = await req.json();
-
-    if (!slug) {
-      logStep(route, "validation_failed", { reason: "slug_required" });
+    const body = await req.json().catch(() => null);
+    if (body == null) {
+      logStep(route, "validation_failed", { reason: "invalid_json" });
       logResponse(route, 400, Date.now() - start, {});
-      return NextResponse.json({ error: "Slug is required" }, { status: 400 });
+      return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
     }
+    const slugRaw = typeof body.slug === "string" ? body.slug.trim() : "";
+    const slugValidation = validateSlug(slugRaw);
+    if (!slugValidation.ok) {
+      logStep(route, "validation_failed", { reason: slugValidation.error });
+      logResponse(route, 400, Date.now() - start, {});
+      return NextResponse.json({ error: slugValidation.error }, { status: 400 });
+    }
+    const slug = slugRaw;
 
     await inngest.send({
       name: "app/submitted",

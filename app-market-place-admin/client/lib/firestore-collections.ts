@@ -14,4 +14,5 @@ export const COLLECTIONS = {
   developerStrikes: "developerStrikes",
   appAppeals: "appAppeals",
   settings: "settings",
+  idempotencyKeys: "idempotencyKeys",
 } as const;

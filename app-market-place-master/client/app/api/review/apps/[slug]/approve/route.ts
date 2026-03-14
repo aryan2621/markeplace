@@ -4,6 +4,7 @@ import { getDb } from "@/lib/firebase-admin";
 import { checkMasterRateLimit } from "@/lib/rate-limit";
 import { requireMasterUser } from "@/lib/master-allowlist";
 import { COLLECTIONS } from "@/lib/firestore-collections";
+import { validateSlug } from "@/lib/validation";
 import { writeAuditLog } from "@/lib/audit-log";
 import { sendAppApprovedEmail } from "@/lib/email";
 import { logRequest, logStep, logResponse, logError } from "@/lib/api-logger";
@@ -31,6 +32,11 @@ export async function POST(
     logStep(route, "rate_limited", { status: 429 });
     return rateLimitRes;
   }
+  const slugValidation = validateSlug(slug ?? "");
+  if (!slugValidation.ok) {
+    logStep(route, "validation_failed", { reason: slugValidation.error, slug });
+    return NextResponse.json({ error: slugValidation.error }, { status: 400 });
+  }
   try {
     const db = getDb();
     const ref = db.collection(COLLECTIONS.apps).doc(slug);
@@ -46,7 +52,21 @@ export async function POST(
       return NextResponse.json({ error: "App is not in review" }, { status: 400 });
     }
     const publishedAt = Date.now();
-    await ref.update({ status: "published", publishedAt });
+    const lastPublishedVersion = (data.version as string) ?? null;
+    const rawVersionCode = data.versionCode;
+    const lastPublishedVersionCode =
+      typeof rawVersionCode === "number"
+        ? rawVersionCode
+        : typeof rawVersionCode === "string"
+          ? parseInt(rawVersionCode, 10)
+          : null;
+    const updatePayload: Record<string, unknown> = {
+      status: "published",
+      publishedAt,
+      lastPublishedVersion,
+      lastPublishedVersionCode: lastPublishedVersionCode != null && !Number.isNaN(lastPublishedVersionCode) ? lastPublishedVersionCode : null,
+    };
+    await ref.update(updatePayload);
     await writeAuditLog({
       userId,
       action: "app.approved",
