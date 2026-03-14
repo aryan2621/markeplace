@@ -31,8 +31,8 @@ export async function POST(req: NextRequest) {
     await db.collection("appReports").add({
       appId: validated.appId,
       appSlug: validated.appSlug,
-      reporterEmail: validated.reporterEmail,
-      reason: validated.reason,
+      reporterEmail: validated.reporterEmail ?? null,
+      reason: validated.reason ?? null,
       status: "pending",
       createdAt: Date.now(),
     });
