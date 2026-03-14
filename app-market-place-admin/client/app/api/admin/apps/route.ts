@@ -4,7 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getDb } from "@/lib/firebase-admin";
 import { checkAdminRateLimit } from "@/lib/rate-limit";
 import { COLLECTIONS } from "@/lib/firestore-collections";
-import { validateSlug } from "@/lib/validation";
+import { validateSlug, validateUploadKey } from "@/lib/validation";
 import { logRequest, logStep, logResponse, logError } from "@/lib/api-logger";
 
 function docToApp(doc: DocumentSnapshot) {
@@ -138,6 +138,16 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: "App with this package name already exists" }, { status: 400 });
       }
     }
+    const downloadS3KeyRaw = body.downloadS3Key;
+    const downloadS3KeyVal =
+      typeof downloadS3KeyRaw === "string" ? downloadS3KeyRaw.trim() : "";
+    if (downloadS3KeyVal) {
+      const keyValidation = validateUploadKey(downloadS3KeyVal);
+      if (!keyValidation.ok) {
+        logStep(route, "validation_failed", { reason: keyValidation.error });
+        return NextResponse.json({ error: keyValidation.error }, { status: 400 });
+      }
+    }
     const raw: Record<string, unknown> = {
       slug,
       name: body.name,
@@ -155,7 +165,7 @@ export async function POST(req: NextRequest) {
       rating: body.rating,
       size: body.size,
       featuredOrder: body.featuredOrder,
-      downloadS3Key: body.downloadS3Key,
+      downloadS3Key: downloadS3KeyVal || undefined,
       version: body.version,
       versionCode: body.versionCode,
       status: "draft",

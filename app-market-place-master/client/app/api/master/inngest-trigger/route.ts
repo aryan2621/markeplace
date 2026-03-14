@@ -1,3 +1,4 @@
+import { timingSafeEqual } from "node:crypto";
 import { NextResponse } from "next/server";
 import { inngest } from "@/inngest/client";
 import { requireMasterUser } from "@/lib/master-allowlist";
@@ -10,10 +11,15 @@ export async function POST(req: Request) {
   logRequest(route, "POST", {});
 
   try {
-    const authHeader = req.headers.get("x-admin-secret");
-    const secret = process.env.ADMIN_INTERNAL_SECRET;
+    const authHeader = req.headers.get("x-admin-secret") ?? "";
+    const secret = process.env.ADMIN_INTERNAL_SECRET ?? "";
+    const secretBuf = Buffer.from(secret, "utf8");
+    const headerBuf = Buffer.from(authHeader, "utf8");
     const isInternal =
-      typeof secret === "string" && secret.length >= 16 && authHeader === secret;
+      typeof process.env.ADMIN_INTERNAL_SECRET === "string" &&
+      process.env.ADMIN_INTERNAL_SECRET.length >= 16 &&
+      secretBuf.length === headerBuf.length &&
+      timingSafeEqual(secretBuf, headerBuf);
 
     if (!isInternal) {
       const isMasterResp = await requireMasterUser();

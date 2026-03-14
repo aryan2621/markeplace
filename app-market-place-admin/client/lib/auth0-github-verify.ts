@@ -3,7 +3,7 @@
  * Clerk remains the main auth provider.
  */
 
-import { createHmac } from "node:crypto";
+import { createHmac, timingSafeEqual } from "node:crypto";
 
 const AUTH0_DOMAIN = process.env.AUTH0_DOMAIN!;
 const AUTH0_CLIENT_ID = process.env.AUTH0_CLIENT_ID!;
@@ -51,8 +51,12 @@ export function verifyAndDecodeState(state: string): string | null {
   if (parts.length !== 2) return null;
   const [payload, sig] = parts;
   const expectedSig = createHmac("sha256", AUTH0_SECRET).update(payload).digest("base64url");
-  if (sig !== expectedSig) return null;
   try {
+    const sigBuf = Buffer.from(sig, "base64url");
+    const expectedBuf = Buffer.from(expectedSig, "base64url");
+    if (sigBuf.length !== expectedBuf.length || !timingSafeEqual(sigBuf, expectedBuf)) {
+      return null;
+    }
     return Buffer.from(payload, "base64url").toString("utf8");
   } catch {
     return null;

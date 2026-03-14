@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getDb } from "@/lib/firebase-admin";
 import { getPresignedReadUrl } from "@/lib/filebase";
 import { checkPublicRateLimit } from "@/lib/rate-limit";
-import { validateSlug } from "@/lib/validation";
+import { validateSlug, validateDownloadKey } from "@/lib/validation";
 import { logRequest, logStep, logResponse, logError } from "@/lib/api-logger";
 
 const DOWNLOAD_SIGNED_URL_EXPIRY_SECONDS = 180; // 3 minutes
@@ -56,6 +56,11 @@ export async function GET(
         result.ok ? { error: "Download not available" } : { error: "Not found" },
         { status: 404 }
       );
+    }
+    const keyValidation = validateDownloadKey(result.downloadS3Key);
+    if (!keyValidation.ok) {
+      logStep(route, "validation_failed", { reason: keyValidation.error, slug });
+      return NextResponse.json({ error: "Download not available" }, { status: 404 });
     }
     let redirectUrl: string;
     try {

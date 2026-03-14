@@ -26,6 +26,25 @@ export function validateSlug(slug: string): { ok: true } | { ok: false; error: s
   return { ok: true };
 }
 
+/** Validates S3/storage key used for downloads. Rejects path traversal and non-uploads keys. */
+export function validateDownloadKey(key: string): { ok: true } | { ok: false; error: string } {
+  if (typeof key !== "string" || !key.trim()) {
+    return { ok: false, error: "Download key required" };
+  }
+  const trimmed = key.trim();
+  if (trimmed.includes("..")) {
+    return { ok: false, error: "Invalid download key" };
+  }
+  if (!trimmed.startsWith("uploads/")) {
+    return { ok: false, error: "Invalid download key" };
+  }
+  const UPLOAD_KEY_PATTERN = /^uploads\/[a-zA-Z0-9_-]+(\.[a-zA-Z0-9]+)?$/;
+  if (!UPLOAD_KEY_PATTERN.test(trimmed)) {
+    return { ok: false, error: "Invalid download key" };
+  }
+  return { ok: true };
+}
+
 export function validateReportBody(body: unknown): {
   ok: true;
   appId: string;
@@ -44,6 +63,9 @@ export function validateReportBody(body: unknown): {
   }
   if (appId.length > APP_ID_SLUG_MAX_LENGTH || appSlug.length > APP_ID_SLUG_MAX_LENGTH) {
     return { ok: false, error: "appId and appSlug too long" };
+  }
+  if (!SLUG_PATTERN.test(appId) || !SLUG_PATTERN.test(appSlug)) {
+    return { ok: false, error: "appId and appSlug may only contain letters, numbers, hyphens, and underscores" };
   }
   const reporterEmail =
     typeof b.reporterEmail === "string" ? b.reporterEmail.trim() : undefined;

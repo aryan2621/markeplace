@@ -5,7 +5,7 @@ import { getDb } from "@/lib/firebase-admin";
 import { checkAdminRateLimit } from "@/lib/rate-limit";
 import { COLLECTIONS } from "@/lib/firestore-collections";
 import { getAppIfOwned } from "@/lib/admin-apps";
-import { validateSlug } from "@/lib/validation";
+import { validateSlug, validateUploadKey } from "@/lib/validation";
 import { logRequest, logStep, logResponse, logError } from "@/lib/api-logger";
 
 function docToApp(doc: DocumentSnapshot) {
@@ -161,7 +161,19 @@ export async function PATCH(
     if (body.rating !== undefined) patch.rating = body.rating;
     if (body.size !== undefined) patch.size = body.size;
     if (body.featuredOrder !== undefined) patch.featuredOrder = body.featuredOrder;
-    if (body.downloadS3Key !== undefined) patch.downloadS3Key = body.downloadS3Key;
+    if (body.downloadS3Key !== undefined) {
+      const keyVal = typeof body.downloadS3Key === "string" ? body.downloadS3Key.trim() : "";
+      if (keyVal) {
+        const keyValidation = validateUploadKey(keyVal);
+        if (!keyValidation.ok) {
+          logStep(route, "validation_failed", { reason: keyValidation.error, slug });
+          return NextResponse.json({ error: keyValidation.error }, { status: 400 });
+        }
+        patch.downloadS3Key = keyVal;
+      } else {
+        patch.downloadS3Key = keyVal;
+      }
+    }
     if (body.version !== undefined) patch.version = body.version;
     if (body.versionCode !== undefined) patch.versionCode = body.versionCode;
     if (body.status !== undefined) {
